@@ -1,0 +1,15 @@
+# Postgres para desarrollo local. En producción la base es Neon.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: corna
+      POSTGRES_PASSWORD: corna
+      POSTGRES_DB: corna
+    ports:
+      - '55432:5432'
+    volumes:
+      - corna-pg:/var/lib/postgresql/data
+
+volumes:
+  corna-pg:

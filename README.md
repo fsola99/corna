@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CORNA
 
-## Getting Started
+Quién del grupo va al gimnasio esta semana, con qué rutina, y cómo le fue.
 
-First, run the development server:
+- **Semana**: una grilla de amigos × días. Tocás tus casilleros para anotarte;
+  se marcan solos cuando terminás una sesión.
+- **Rutinas**: cada uno arma las suyas, con series, repeticiones y peso objetivo.
+  Una queda como la de por defecto.
+- **Sesión**: cola de ejercicios que se reordena sola cuando la máquina está
+  ocupada, registro de cada serie, y al cerrar la puntuás en la escala cornaldo
+  del 1 al 5.
+- **Historial**: sesiones pasadas con volumen, duración y cornaldo, y la curva de
+  la mejor serie de cada ejercicio. También podés ver el de tus amigos.
+
+Se instala en la pantalla de inicio del teléfono y abre a pantalla completa.
+
+## Stack
+
+| Capa | Qué |
+|---|---|
+| Framework | Next.js 16 (App Router, Server Components y Server Actions) |
+| Base | Postgres — Neon en producción, contenedor local en desarrollo |
+| ORM | Drizzle |
+| Estilos | Tailwind v4, con los tokens de diseño en `src/app/globals.css` |
+| Cuentas | Email y contraseña, con scrypt de `node:crypto` |
+| Sesiones | Cookie firmada con `jose` |
+
+No hay capa de API: las páginas consultan la base directamente y los formularios
+llaman Server Actions.
+
+## Correr en local
 
 ```bash
+cp .env.example .env.local     # completá AUTH_SECRET
+docker compose up -d           # Postgres en localhost:55432
+npm install
+npm run db:push                # crea las tablas
+npm run db:seed                # carga el catálogo de ejercicios
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Para `.env.local` en desarrollo:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+DATABASE_URL="postgresql://corna:corna@localhost:55432/corna"
+AUTH_SECRET="<openssl rand -base64 32>"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Publicar
 
-## Learn More
+1. **Base**: creá un proyecto en [neon.tech](https://neon.tech) y copiá la
+   connection string *pooled*. Al apuntar a un host `.neon.tech`, la app cambia
+   sola al driver HTTP, que es el que sobrevive a las funciones efímeras.
+2. **Tablas**: con esa URL en `.env.local`, corré `npm run db:push` y
+   `npm run db:seed` una vez.
+3. **Deploy**: importá el repo en [vercel.com](https://vercel.com) y cargá
+   `DATABASE_URL` y `AUTH_SECRET` como variables de entorno.
 
-To learn more about Next.js, take a look at the following resources:
+Cada `git push` a `main` publica; cada pull request levanta su propia URL de
+preview.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Cuentas y grupos
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Cada uno se registra con email y contraseña. El nombre es sólo cómo lo ven los
+demás: cambiarlo no crea una persona nueva ni parte el historial.
 
-## Deploy on Vercel
+Un grupo tiene un dueño, que es quien lo creó. El dueño genera un link de
+invitación —reutilizable, vence a los 7 días— y lo pega en el chat del grupo;
+quien lo abre se registra y entra. El dueño puede renovar o dar de baja el link,
+sacar integrantes, pasarle el grupo a otro, o borrarlo.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Se puede estar en varios grupos. Las rutinas y el historial cuelgan de la
+persona, no del grupo, así que te acompañan a todos; lo único que el grupo
+define es quiénes aparecen en la grilla.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | servidor de desarrollo |
+| `npm run build` | build de producción |
+| `npm run db:push` | aplica `src/db/schema.ts` a la base |
+| `npm run db:seed` | carga el catálogo de ejercicios |
+| `npm run db:demo` | carga sesiones de ejemplo para ver el historial (sólo local) |
+| `npm run typecheck` | TypeScript sin emitir |

@@ -1,26 +1,148 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-paper: #e7e1ce;
+  --color-paper-2: #d8d1b9;
+  --color-ink: #14110d;
+  --color-pink: #ff2d8f;
+  --color-blue: #1e36d9;
+  --color-violet: #7a1fa8;
+
+  --font-display: var(--font-bungee), ui-sans-serif, system-ui;
+  --font-head: var(--font-shoulders), 'Arial Narrow', ui-sans-serif, system-ui;
+  --font-body: var(--font-grotesk), ui-sans-serif, system-ui;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Grano de papel barato, encima de todo pero sin interceptar clicks. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.3;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@layer components {
+  /*
+   * La firma de la app: cada superficie sale impresa en dos tintas mal
+   * registradas, la rosa corrida hacia abajo y la azul hacia arriba.
+   */
+  .ink {
+    border: 2px solid var(--color-ink);
+    box-shadow:
+      4px 4px 0 var(--color-pink),
+      -3px -3px 0 var(--color-blue);
+  }
+
+  .ink-sm {
+    border: 2px solid var(--color-ink);
+    box-shadow:
+      2px 2px 0 var(--color-pink),
+      -2px -2px 0 var(--color-blue);
+  }
+
+  .ink-flat {
+    border: 2px solid var(--color-ink);
+  }
+
+  /* Al presionar, las tintas entran en registro. */
+  .ink-press:active {
+    box-shadow:
+      1px 1px 0 var(--color-pink),
+      -1px -1px 0 var(--color-blue);
+    translate: 2px 2px;
+  }
+
+  .overprint {
+    text-shadow:
+      3px 3px 0 var(--color-pink),
+      -2px -2px 0 var(--color-blue);
+  }
+
+  /* Al cargar la página el logo entra en registro, como una prensa calibrando. */
+  .overprint-register {
+    animation: register 900ms cubic-bezier(0.2, 1.1, 0.3, 1) both;
+  }
+
+  @keyframes register {
+    0% {
+      text-shadow:
+        18px 13px 0 var(--color-pink),
+        -15px -11px 0 var(--color-blue);
+    }
+    100% {
+      text-shadow:
+        3px 3px 0 var(--color-pink),
+        -2px -2px 0 var(--color-blue);
+    }
+  }
+
+  .marquee-track {
+    animation: marquee 26s linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
+*:focus-visible {
+  outline: 3px solid var(--color-blue);
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* Los inputs son casilleros de planilla, no cajas de formulario. */
+  .field {
+    background: transparent;
+    border-bottom: 3px solid var(--color-ink);
+    font-family: var(--font-head);
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .field::placeholder {
+    color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+  }
+
+  /* Oculta las flechitas de los number inputs: acá se tipea, no se clickea. */
+  .field::-webkit-outer-spin-button,
+  .field::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+
+  .field[type='number'] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overprint-register,
+  .marquee-track {
+    animation: none;
+  }
+  .ink-press:active {
+    translate: none;
+  }
 }
