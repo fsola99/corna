@@ -1,12 +1,13 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { and, eq } from 'drizzle-orm'
+import { refresh } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { attendance } from '@/db/schema'
 import { destroySession, requireUser } from '@/lib/session'
 
-/** Normaliza una hora tipeada a 'HH:MM'. Cualquier cosa rara vuelve nula. */
+/** Normaliza una hora a 'HH:MM'. Cualquier cosa rara vuelve nula. */
 function cleanTime(value: string | null): string | null {
   const match = /^(\d{1,2}):(\d{2})$/.exec((value ?? '').trim())
   if (!match) return null
@@ -16,20 +17,30 @@ function cleanTime(value: string | null): string | null {
   return `${String(hours).padStart(2, '0')}:${match[2]}`
 }
 
-/** Anota la intención de ir ese día, con la hora si la eligió. */
-export async function setAttendance(day: string, at: string | null, going: boolean) {
+/**
+ * Deja anotado que va ese día a esa hora. Con `at` nulo se borra la anotación,
+ * que es como se dice que ya no va.
+ */
+export async function setAttendance(day: string, at: string | null) {
   const { id: userId } = await requireUser()
-  const time = going ? cleanTime(at) : null
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return
 
-  await db
-    .insert(attendance)
-    .values({ userId, day, going, at: time })
-    .onConflictDoUpdate({
-      target: [attendance.userId, attendance.day],
-      set: { going, at: time },
-    })
+  const time = cleanTime(at)
 
-  revalidatePath('/')
+  if (time === null) {
+    await db.delete(attendance).where(and(eq(attendance.userId, userId), eq(attendance.day, day)))
+  } else {
+    await db
+      .insert(attendance)
+      .values({ userId, day, going: true, at: time })
+      .onConflictDoUpdate({
+        target: [attendance.userId, attendance.day],
+        set: { going: true, at: time },
+      })
+  }
+
+  // La página lee la base directamente, así que alcanza con volver a pedirla.
+  refresh()
 }
 
 export async function logout() {

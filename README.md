@@ -1,10 +1,12 @@
 # CORNA
 
-Quién del grupo va al gimnasio esta semana, con qué rutina, y cómo le fue.
+Qué día y a qué hora va cada uno del grupo al gimnasio, para cruzarse.
 
-- **Semana**: una grilla de amigos × días. Tocás tu casillero, elegís a qué hora
-  caés y la hora queda a la vista; la cinta de arriba canta quiénes se cruzan el
-  mismo día a la misma hora. Se marcan solos cuando terminás una sesión.
+- **Semana**: el calendario, y todo lo demás cuelga de ahí. Lunes a sábado, de
+  07 a 22: tocás la casilla del día y la hora en que caés y quedás anotado; el
+  color dice quién es cada uno. La casilla se pone verdín cuando coinciden dos o
+  más, abajo quedan listados los cruces y la cinta de arriba los canta. Se marca
+  sola cuando terminás una sesión.
 - **Rutinas**: cada uno arma las suyas, con series, repeticiones y peso objetivo.
   Una queda como la de por defecto.
 - **Sesión**: cola de ejercicios que se reordena sola cuando la máquina está

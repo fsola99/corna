@@ -1,16 +1,16 @@
-import { and, gte, isNotNull, lte } from 'drizzle-orm'
+import { and, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm'
 import Link from 'next/link'
-import { eq } from 'drizzle-orm'
 import { Header } from '@/components/header'
 import { Marquee } from '@/components/marquee'
 import { db } from '@/db'
 import { attendance, routines, workoutSessions } from '@/db/schema'
 import { groupMembers, requireGroup } from '@/lib/groups'
+import { meetups } from '@/lib/meetups'
 import { requireUser } from '@/lib/session'
 import { openSessionId } from '@/lib/workout'
-import { longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
+import { localHour, longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
 import { startSession } from './sesion/actions'
-import { WeekGrid, type Cells } from './week-grid'
+import { Calendar, type Plans } from './calendar'
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ w?: string }> }) {
   const me = await requireUser()
@@ -19,20 +19,31 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   const todayStr = today()
   const days = weekOf(shiftWeek(todayStr, offset))
 
-  const inWeek = (col: typeof attendance.day | typeof workoutSessions.day) =>
-    and(gte(col, days[0]), lte(col, days[6]))
+  const members = await groupMembers(group.id)
+  const ids = members.map((member) => member.id)
 
-  const [friends, plans, done, myRoutines, currentSession] = await Promise.all([
-    groupMembers(group.id),
-    db.select().from(attendance).where(inWeek(attendance.day)),
+  const inWeek = (col: typeof attendance.day | typeof workoutSessions.day) =>
+    and(gte(col, days[0]), lte(col, days[days.length - 1]))
+
+  const [plans, done, myRoutines, currentSession] = await Promise.all([
+    db
+      .select({ userId: attendance.userId, day: attendance.day, at: attendance.at })
+      .from(attendance)
+      .where(and(inArray(attendance.userId, ids), eq(attendance.going, true), inWeek(attendance.day))),
     db
       .select({
         userId: workoutSessions.userId,
         day: workoutSessions.day,
-        cornaldo: workoutSessions.cornaldo,
+        startedAt: workoutSessions.startedAt,
       })
       .from(workoutSessions)
-      .where(and(inWeek(workoutSessions.day), isNotNull(workoutSessions.endedAt))),
+      .where(
+        and(
+          inArray(workoutSessions.userId, ids),
+          inWeek(workoutSessions.day),
+          isNotNull(workoutSessions.endedAt),
+        ),
+      ),
     db
       .select({ id: routines.id, name: routines.name, isDefault: routines.isDefault })
       .from(routines)
@@ -41,115 +52,98 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
     openSessionId(me.id),
   ])
 
-  const cells: Cells = {}
+  const cells: Plans = {}
   for (const plan of plans) {
-    cells[`${plan.userId}:${plan.day}`] = {
-      going: plan.going,
-      at: plan.at,
-      done: false,
-      cornaldo: null,
-    }
+    cells[`${plan.userId}:${plan.day}`] = { at: plan.at, done: false }
   }
+  // Una sesión terminada manda: si no había nada anotado, entra a la hora en que arrancó.
   for (const session of done) {
     const key = `${session.userId}:${session.day}`
-    cells[key] = {
-      going: cells[key]?.going ?? true,
-      at: cells[key]?.at ?? null,
-      done: true,
-      cornaldo: session.cornaldo,
-    }
+    cells[key] = { at: cells[key]?.at ?? localHour(session.startedAt), done: true }
   }
 
-  const ticker = buildTicker(friends, done, plans)
-  const defaultRoutine = myRoutines.find((r) => r.isDefault) ?? myRoutines[0]
+  const names = new Map(members.map((member) => [member.id, member.name]))
+  const ticker = meetups(
+    Object.entries(cells).map(([key, plan]) => {
+      const [userId, day] = key.split(':')
+      return { userId: Number(userId), day, at: plan.at }
+    }),
+  ).map(
+    (meetup) =>
+      `${longDay(meetup.day)} ${meetup.hour} · ${meetup.userIds
+        .map((id) => names.get(id) ?? '')
+        .join(' + ')}`,
+  )
+
+  const defaultRoutine = myRoutines.find((routine) => routine.isDefault) ?? myRoutines[0]
 
   return (
     <>
       <Header user={me} group={group} active="semana" />
-      <Marquee items={ticker} />
+      <Marquee items={ticker.length > 0 ? ticker : ['todavía nadie coincide esta semana']} />
 
       <main className="mx-auto max-w-5xl px-4 pt-8 pb-16">
-        <div className="mb-4 flex items-end justify-between gap-4">
+        <div className="mb-5 flex items-end justify-between gap-4">
           <h1 className="font-head text-3xl leading-none font-black tracking-tight uppercase sm:text-5xl">
             {offset === 0 ? 'Esta semana' : weekLabel(days)}
             <span className="font-body block text-xs font-normal tracking-[0.2em] normal-case opacity-60">
-              {offset === 0 ? weekLabel(days) : 'semana pasada'}
+              {offset === 0 ? weekLabel(days) : 'otra semana'}
             </span>
           </h1>
 
           <div className="flex shrink-0 gap-1">
             <WeekLink to={offset - 1} label="←" />
             {offset !== 0 && <WeekLink to={0} label="hoy" />}
-            <WeekLink to={offset + 1} label="→" disabled={offset >= 0} />
+            <WeekLink to={offset + 1} label="→" />
           </div>
         </div>
 
-        <WeekGrid
+        <Calendar
           days={days}
-          friends={friends}
-          cells={cells}
+          members={members}
+          plans={cells}
           meId={me.id}
           todayStr={todayStr}
         />
 
-        <section className="ink bg-paper-2 mt-10 p-5 sm:p-7">
+        <section className="border-ink/25 mt-10 border-t-2 pt-5">
           {currentSession ? (
-            <>
-              <h2 className="font-head text-2xl font-black tracking-wide uppercase">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <span className="font-head text-lg font-black tracking-wide uppercase">
                 Tenés una sesión abierta
-              </h2>
-              <p className="mt-1 mb-4 text-sm opacity-70">
-                Quedó sin cerrar. Seguí donde ibas o cerrala con tu cornaldo.
-              </p>
+              </span>
               <Link
                 href="/sesion"
-                className="ink-sm ink-press bg-rust font-display inline-block px-6 py-3 text-lg"
+                className="ink-sm ink-press bg-rust font-head px-4 py-2 text-base font-black tracking-widest uppercase"
               >
-                Seguir la sesión
+                Seguir
               </Link>
-            </>
+            </div>
           ) : (
-            <>
-              <h2 className="font-head text-2xl font-black tracking-wide uppercase">
-                Empezar una sesión
-              </h2>
-              <p className="mt-1 mb-4 text-sm opacity-70">
-                {myRoutines.length > 0
-                  ? 'Elegí con qué rutina entrenás hoy.'
-                  : 'Todavía no armaste ninguna rutina. Podés entrenar suelto y anotar sobre la marcha.'}
-              </p>
-
-              <form action={startSession} className="flex flex-wrap items-stretch gap-3">
-                <select
-                  name="routineId"
-                  defaultValue={defaultRoutine ? String(defaultRoutine.id) : 'libre'}
-                  aria-label="Rutina"
-                  className="ink-flat bg-paper-2 font-head min-w-52 px-3 py-3 text-lg font-black tracking-wide uppercase"
-                >
-                  {myRoutines.map((routine) => (
-                    <option key={routine.id} value={routine.id}>
-                      {routine.name}
-                      {routine.isDefault ? ' (por defecto)' : ''}
-                    </option>
-                  ))}
-                  <option value="libre">Sesión suelta</option>
-                </select>
-
-                <button
-                  type="submit"
-                  className="ink-sm ink-press bg-rust font-display px-6 py-3 text-lg"
-                >
-                  Arrancar
-                </button>
-
-                <Link
-                  href="/rutinas"
-                  className="font-head self-center text-base font-bold tracking-widest uppercase underline decoration-teal decoration-2 underline-offset-4"
-                >
-                  Editar rutinas
-                </Link>
-              </form>
-            </>
+            <form action={startSession} className="flex flex-wrap items-center gap-2">
+              <span className="font-head mr-1 text-sm font-black tracking-[0.2em] uppercase opacity-55">
+                Entrenar ahora
+              </span>
+              <select
+                name="routineId"
+                defaultValue={defaultRoutine ? String(defaultRoutine.id) : 'libre'}
+                aria-label="Rutina"
+                className="ink-flat bg-paper-2 font-head px-2 py-1.5 text-base font-black tracking-wide uppercase"
+              >
+                {myRoutines.map((routine) => (
+                  <option key={routine.id} value={routine.id}>
+                    {routine.name}
+                  </option>
+                ))}
+                <option value="libre">Sesión suelta</option>
+              </select>
+              <button
+                type="submit"
+                className="ink-flat ink-press font-head px-3 py-1.5 text-base font-black tracking-widest uppercase"
+              >
+                Arrancar
+              </button>
+            </form>
           )}
         </section>
       </main>
@@ -157,14 +151,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   )
 }
 
-function WeekLink({ to, label, disabled }: { to: number; label: string; disabled?: boolean }) {
-  if (disabled) {
-    return (
-      <span className="font-head border-ink/20 border-2 px-3 py-1 text-lg font-black opacity-30">
-        {label}
-      </span>
-    )
-  }
+function WeekLink({ to, label }: { to: number; label: string }) {
   return (
     <Link
       href={to === 0 ? '/' : `/?w=${to}`}
@@ -173,50 +160,4 @@ function WeekLink({ to, label, disabled }: { to: number; label: string; disabled
       {label}
     </Link>
   )
-}
-
-function buildTicker(
-  friends: { id: number; name: string }[],
-  done: { userId: number; cornaldo: number | null }[],
-  plans: { userId: number; day: string; going: boolean; at: string | null }[],
-): string[] {
-  if (friends.length === 0) return []
-  const names = new Map(friends.map((friend) => [friend.id, friend.name]))
-  const items: string[] = []
-
-  if (done.length === 0) {
-    items.push('la semana está en blanco', 'nadie tocó un fierro todavía')
-  } else {
-    const counts = new Map<number, number>()
-    for (const session of done) counts.set(session.userId, (counts.get(session.userId) ?? 0) + 1)
-
-    for (const friend of friends) {
-      const n = counts.get(friend.id) ?? 0
-      items.push(`${friend.name} ${n} ${n === 1 ? 'sesión' : 'sesiones'}`)
-    }
-
-    const best = done.reduce<{ userId: number; cornaldo: number | null } | null>(
-      (top, session) => ((session.cornaldo ?? 0) > (top?.cornaldo ?? 0) ? session : top),
-      null,
-    )
-    if (best?.cornaldo) {
-      items.push(`mejor cornaldo ${best.cornaldo} · ${names.get(best.userId) ?? ''}`)
-    }
-  }
-
-  // Quién se cruza con quién: mismo día, misma hora.
-  const meetings = new Map<string, string[]>()
-  for (const plan of plans) {
-    const name = plan.going && plan.at ? names.get(plan.userId) : undefined
-    if (!name) continue
-    const slot = `${plan.day} ${plan.at}`
-    meetings.set(slot, [...(meetings.get(slot) ?? []), name])
-  }
-  for (const [slot, who] of meetings) {
-    if (who.length < 2) continue
-    const [day, at] = slot.split(' ')
-    items.push(`${longDay(day)} ${at} · ${who.join(' + ')}`)
-  }
-
-  return items
 }

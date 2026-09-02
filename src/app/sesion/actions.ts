@@ -14,7 +14,7 @@ import {
 } from '@/db/schema'
 import { requireUser } from '@/lib/session'
 import { openSessionId } from '@/lib/workout'
-import { today } from '@/lib/week'
+import { localHour, today } from '@/lib/week'
 
 /** Resuelve un renglón de sesión verificando que sea del usuario logueado. */
 async function ownRow(id: number, userId: number) {
@@ -77,9 +77,10 @@ export async function startSession(formData: FormData) {
     }
   }
 
+  // Arrancar una sesión también deja la marca en el calendario, a esta hora.
   await db
     .insert(attendance)
-    .values({ userId, day, going: true })
+    .values({ userId, day, going: true, at: localHour(new Date()) })
     .onConflictDoUpdate({ target: [attendance.userId, attendance.day], set: { going: true } })
 
   revalidatePath('/')
