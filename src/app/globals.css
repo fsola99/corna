@@ -1,16 +1,27 @@
 @import 'tailwindcss';
 
+/*
+ * Papel negro y tinta clara: la misma imprenta de dos tintas mal registradas,
+ * pero tirada de noche. Los acentos son minerales —cobre, verdín, musgo,
+ * bronce— y nunca fluorescentes.
+ */
 @theme {
-  --color-paper: #e7e1ce;
-  --color-paper-2: #d8d1b9;
-  --color-ink: #14110d;
-  --color-pink: #ff2d8f;
-  --color-blue: #1e36d9;
-  --color-violet: #7a1fa8;
+  --color-paper: #101513;
+  --color-paper-2: #1a2320;
+  --color-ink: #ddd2b8;
+  --color-rust: #d2712f;
+  --color-teal: #2b9e93;
+  --color-moss: #8aa62f;
+  --color-brass: #c9932f;
 
   --font-display: var(--font-bungee), ui-sans-serif, system-ui;
   --font-head: var(--font-shoulders), 'Arial Narrow', ui-sans-serif, system-ui;
   --font-body: var(--font-grotesk), ui-sans-serif, system-ui;
+}
+
+/* Los controles nativos —select, date, time— tienen que salir en oscuro. */
+:root {
+  color-scheme: dark;
 }
 
 html {
@@ -24,6 +35,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: var(--color-brass);
+  color: var(--color-paper);
+}
+
 /* Grano de papel barato, encima de todo pero sin interceptar clicks. */
 body::after {
   content: '';
@@ -31,28 +47,28 @@ body::after {
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.3;
-  mix-blend-mode: multiply;
+  opacity: 0.07;
+  mix-blend-mode: screen;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 @layer components {
   /*
    * La firma de la app: cada superficie sale impresa en dos tintas mal
-   * registradas, la rosa corrida hacia abajo y la azul hacia arriba.
+   * registradas, el cobre corrido hacia abajo y el verdín hacia arriba.
    */
   .ink {
     border: 2px solid var(--color-ink);
     box-shadow:
-      4px 4px 0 var(--color-pink),
-      -3px -3px 0 var(--color-blue);
+      4px 4px 0 var(--color-rust),
+      -3px -3px 0 var(--color-teal);
   }
 
   .ink-sm {
     border: 2px solid var(--color-ink);
     box-shadow:
-      2px 2px 0 var(--color-pink),
-      -2px -2px 0 var(--color-blue);
+      2px 2px 0 var(--color-rust),
+      -2px -2px 0 var(--color-teal);
   }
 
   .ink-flat {
@@ -62,15 +78,34 @@ body::after {
   /* Al presionar, las tintas entran en registro. */
   .ink-press:active {
     box-shadow:
-      1px 1px 0 var(--color-pink),
-      -1px -1px 0 var(--color-blue);
+      1px 1px 0 var(--color-rust),
+      -1px -1px 0 var(--color-teal);
     translate: 2px 2px;
+  }
+
+  /*
+   * Un bloque entintado es tinta maciza: lo que va arriba se lee en el color
+   * del papel. Vive en la capa de componentes para que un `text-*` suelto
+   * lo pueda contradecir cuando haga falta.
+   */
+  .bg-rust,
+  .bg-teal,
+  .bg-moss,
+  .bg-brass,
+  .bg-ink {
+    color: var(--color-paper);
+  }
+
+  /* Y al revés: volver al papel devuelve la tinta clara, incluso adentro de un bloque. */
+  .bg-paper,
+  .bg-paper-2 {
+    color: var(--color-ink);
   }
 
   .overprint {
     text-shadow:
-      3px 3px 0 var(--color-pink),
-      -2px -2px 0 var(--color-blue);
+      3px 3px 0 var(--color-rust),
+      -2px -2px 0 var(--color-teal);
   }
 
   /* Al cargar la página el logo entra en registro, como una prensa calibrando. */
@@ -81,13 +116,13 @@ body::after {
   @keyframes register {
     0% {
       text-shadow:
-        18px 13px 0 var(--color-pink),
-        -15px -11px 0 var(--color-blue);
+        18px 13px 0 var(--color-rust),
+        -15px -11px 0 var(--color-teal);
     }
     100% {
       text-shadow:
-        3px 3px 0 var(--color-pink),
-        -2px -2px 0 var(--color-blue);
+        3px 3px 0 var(--color-rust),
+        -2px -2px 0 var(--color-teal);
     }
   }
 
@@ -106,7 +141,7 @@ body::after {
 }
 
 *:focus-visible {
-  outline: 3px solid var(--color-blue);
+  outline: 3px solid var(--color-teal);
   outline-offset: 2px;
 }
 
@@ -114,14 +149,14 @@ body::after {
   /* Los inputs son casilleros de planilla, no cajas de formulario. */
   .field {
     background: transparent;
-    border-bottom: 3px solid var(--color-ink);
+    border-bottom: 3px solid currentColor;
     font-family: var(--font-head);
     font-weight: 800;
     text-align: center;
   }
 
   .field::placeholder {
-    color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+    color: color-mix(in srgb, currentColor 35%, transparent);
   }
 
   /* Oculta las flechitas de los number inputs: acá se tipea, no se clickea. */
@@ -134,6 +169,13 @@ body::after {
   .field[type='number'] {
     appearance: textfield;
     -moz-appearance: textfield;
+  }
+
+  /* El reloj del `time` y el calendario del `date`, en tinta clara. */
+  .field::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.65;
+    cursor: pointer;
   }
 }
 

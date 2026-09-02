@@ -2,17 +2,24 @@
 
 Quién del grupo va al gimnasio esta semana, con qué rutina, y cómo le fue.
 
-- **Semana**: una grilla de amigos × días. Tocás tus casilleros para anotarte;
-  se marcan solos cuando terminás una sesión.
+- **Semana**: una grilla de amigos × días. Tocás tu casillero, elegís a qué hora
+  caés y la hora queda a la vista; la cinta de arriba canta quiénes se cruzan el
+  mismo día a la misma hora. Se marcan solos cuando terminás una sesión.
 - **Rutinas**: cada uno arma las suyas, con series, repeticiones y peso objetivo.
   Una queda como la de por defecto.
 - **Sesión**: cola de ejercicios que se reordena sola cuando la máquina está
-  ocupada, registro de cada serie, y al cerrar la puntuás en la escala cornaldo
-  del 1 al 5.
+  ocupada, cambio de un ejercicio por otro sin tocar la rutina, y registro de
+  cada serie. Abajo queda fija la barra que termina la sesión entera de un
+  toque: lo que no llegaste a hacer se cierra solo y la escala cornaldo del 1 al
+  5 es opcional.
 - **Historial**: sesiones pasadas con volumen, duración y cornaldo, y la curva de
-  la mejor serie de cada ejercicio. También podés ver el de tus amigos.
+  la mejor serie de cada ejercicio. Las tuyas se editan enteras —día, puntaje,
+  nota y cada serie, una por una— o se borran. También podés ver el de tus
+  amigos.
 
-Se instala en la pantalla de inicio del teléfono y abre a pantalla completa.
+Sale impresa sobre papel negro: tinta hueso, y encima cobre y verdín mal
+registrados, como una serigrafía barata. Se instala en la pantalla de inicio del
+teléfono y abre a pantalla completa.
 
 ## Stack
 
@@ -21,7 +28,7 @@ Se instala en la pantalla de inicio del teléfono y abre a pantalla completa.
 | Framework | Next.js 16 (App Router, Server Components y Server Actions) |
 | Base | Postgres — Neon en producción, contenedor local en desarrollo |
 | ORM | Drizzle |
-| Estilos | Tailwind v4, con los tokens de diseño en `src/app/globals.css` |
+| Estilos | Tailwind v4; la paleta y las dos tintas corridas, en `src/app/globals.css` |
 | Cuentas | Email y contraseña, con scrypt de `node:crypto` |
 | Sesiones | Cookie firmada con `jose` |
 

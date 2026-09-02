@@ -28,7 +28,7 @@ export default async function NewGroupPage() {
       {groups.length > 0 && (
         <Link
           href="/"
-          className="font-head text-center text-sm font-bold tracking-[0.2em] uppercase underline decoration-blue decoration-2 underline-offset-4"
+          className="font-head text-center text-sm font-bold tracking-[0.2em] uppercase underline decoration-teal decoration-2 underline-offset-4"
         >
           ← Volver
         </Link>

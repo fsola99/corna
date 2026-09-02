@@ -12,12 +12,12 @@ export function AuthForm({ mode, invite }: { mode: 'login' | 'register'; invite?
   )
 
   return (
-    <form action={action} className="ink bg-paper w-full max-w-md">
-      <div className="border-ink bg-blue text-paper flex items-baseline justify-between border-b-2 px-4 py-2">
+    <form action={action} className="ink bg-paper-2 w-full max-w-md">
+      <div className="border-ink bg-teal text-paper flex items-baseline justify-between border-b-2 px-4 py-2">
         <span className="font-head text-lg font-black tracking-[0.25em] uppercase">
           {isRegister ? 'Alta de socio' : 'Ficha de socio'}
         </span>
-        <span className="font-head text-pink text-lg font-black">Nº ____</span>
+        <span className="font-head text-lg font-black opacity-60">Nº ____</span>
       </div>
 
       <div className="space-y-6 px-6 py-8">
@@ -51,7 +51,7 @@ export function AuthForm({ mode, invite }: { mode: 'login' | 'register'; invite?
         />
 
         {state.error && (
-          <p className="border-ink bg-pink font-head border-2 px-3 py-2 text-base font-bold tracking-wide uppercase">
+          <p className="border-ink bg-rust font-head border-2 px-3 py-2 text-base font-bold tracking-wide uppercase">
             {state.error}
           </p>
         )}
@@ -59,7 +59,7 @@ export function AuthForm({ mode, invite }: { mode: 'login' | 'register'; invite?
         <button
           type="submit"
           disabled={pending}
-          className="ink-sm ink-press bg-pink font-display w-full py-4 text-xl disabled:opacity-60"
+          className="ink-sm ink-press bg-rust font-display w-full py-4 text-xl disabled:opacity-60"
         >
           {pending ? 'Un segundo…' : isRegister ? 'Crear cuenta' : 'Entrar'}
         </button>
@@ -71,7 +71,7 @@ export function AuthForm({ mode, invite }: { mode: 'login' | 'register'; invite?
               (isRegister ? '/login' : '/registro') +
               (invite ? `?i=${encodeURIComponent(invite)}` : '')
             }
-            className="font-head font-bold tracking-widest uppercase underline decoration-pink decoration-2 underline-offset-4"
+            className="font-head font-bold tracking-widest uppercase underline decoration-rust decoration-2 underline-offset-4"
           >
             {isRegister ? 'Entrar' : 'Crear cuenta'}
           </Link>

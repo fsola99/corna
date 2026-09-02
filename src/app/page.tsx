@@ -8,7 +8,7 @@ import { attendance, routines, workoutSessions } from '@/db/schema'
 import { groupMembers, requireGroup } from '@/lib/groups'
 import { requireUser } from '@/lib/session'
 import { openSessionId } from '@/lib/workout'
-import { shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
+import { longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
 import { startSession } from './sesion/actions'
 import { WeekGrid, type Cells } from './week-grid'
 
@@ -43,18 +43,24 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
 
   const cells: Cells = {}
   for (const plan of plans) {
-    cells[`${plan.userId}:${plan.day}`] = { going: plan.going, done: false, cornaldo: null }
+    cells[`${plan.userId}:${plan.day}`] = {
+      going: plan.going,
+      at: plan.at,
+      done: false,
+      cornaldo: null,
+    }
   }
   for (const session of done) {
     const key = `${session.userId}:${session.day}`
     cells[key] = {
       going: cells[key]?.going ?? true,
+      at: cells[key]?.at ?? null,
       done: true,
       cornaldo: session.cornaldo,
     }
   }
 
-  const ticker = buildTicker(friends, done)
+  const ticker = buildTicker(friends, done, plans)
   const defaultRoutine = myRoutines.find((r) => r.isDefault) ?? myRoutines[0]
 
   return (
@@ -86,11 +92,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
           todayStr={todayStr}
         />
 
-        <p className="mt-3 text-sm opacity-70">
-          Tocá tus casilleros para anotarte. Se llenan solos cuando terminás una sesión.
-        </p>
-
-        <section className="ink bg-paper mt-10 p-5 sm:p-7">
+        <section className="ink bg-paper-2 mt-10 p-5 sm:p-7">
           {currentSession ? (
             <>
               <h2 className="font-head text-2xl font-black tracking-wide uppercase">
@@ -101,7 +103,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
               </p>
               <Link
                 href="/sesion"
-                className="ink-sm ink-press bg-pink font-display inline-block px-6 py-3 text-lg"
+                className="ink-sm ink-press bg-rust font-display inline-block px-6 py-3 text-lg"
               >
                 Seguir la sesión
               </Link>
@@ -122,7 +124,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
                   name="routineId"
                   defaultValue={defaultRoutine ? String(defaultRoutine.id) : 'libre'}
                   aria-label="Rutina"
-                  className="ink-flat bg-paper font-head min-w-52 px-3 py-3 text-lg font-black tracking-wide uppercase"
+                  className="ink-flat bg-paper-2 font-head min-w-52 px-3 py-3 text-lg font-black tracking-wide uppercase"
                 >
                   {myRoutines.map((routine) => (
                     <option key={routine.id} value={routine.id}>
@@ -135,14 +137,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
 
                 <button
                   type="submit"
-                  className="ink-sm ink-press bg-pink font-display px-6 py-3 text-lg"
+                  className="ink-sm ink-press bg-rust font-display px-6 py-3 text-lg"
                 >
                   Arrancar
                 </button>
 
                 <Link
                   href="/rutinas"
-                  className="font-head self-center text-base font-bold tracking-widest uppercase underline decoration-blue decoration-2 underline-offset-4"
+                  className="font-head self-center text-base font-bold tracking-widest uppercase underline decoration-teal decoration-2 underline-offset-4"
                 >
                   Editar rutinas
                 </Link>
@@ -166,7 +168,7 @@ function WeekLink({ to, label, disabled }: { to: number; label: string; disabled
   return (
     <Link
       href={to === 0 ? '/' : `/?w=${to}`}
-      className="ink-flat ink-press font-head bg-paper px-3 py-1 text-lg font-black tracking-widest uppercase"
+      className="ink-flat ink-press font-head bg-paper-2 px-3 py-1 text-lg font-black tracking-widest uppercase"
     >
       {label}
     </Link>
@@ -176,25 +178,44 @@ function WeekLink({ to, label, disabled }: { to: number; label: string; disabled
 function buildTicker(
   friends: { id: number; name: string }[],
   done: { userId: number; cornaldo: number | null }[],
+  plans: { userId: number; day: string; going: boolean; at: string | null }[],
 ): string[] {
   if (friends.length === 0) return []
-  if (done.length === 0) return ['la semana está en blanco', 'nadie tocó un fierro todavía']
+  const names = new Map(friends.map((friend) => [friend.id, friend.name]))
+  const items: string[] = []
 
-  const counts = new Map<number, number>()
-  for (const session of done) counts.set(session.userId, (counts.get(session.userId) ?? 0) + 1)
+  if (done.length === 0) {
+    items.push('la semana está en blanco', 'nadie tocó un fierro todavía')
+  } else {
+    const counts = new Map<number, number>()
+    for (const session of done) counts.set(session.userId, (counts.get(session.userId) ?? 0) + 1)
 
-  const items = friends.map((friend) => {
-    const n = counts.get(friend.id) ?? 0
-    return `${friend.name} ${n} ${n === 1 ? 'sesión' : 'sesiones'}`
-  })
+    for (const friend of friends) {
+      const n = counts.get(friend.id) ?? 0
+      items.push(`${friend.name} ${n} ${n === 1 ? 'sesión' : 'sesiones'}`)
+    }
 
-  const best = done.reduce<{ userId: number; cornaldo: number | null } | null>(
-    (top, session) => ((session.cornaldo ?? 0) > (top?.cornaldo ?? 0) ? session : top),
-    null,
-  )
-  if (best?.cornaldo) {
-    const name = friends.find((f) => f.id === best.userId)?.name ?? ''
-    items.push(`mejor cornaldo ${best.cornaldo} · ${name}`)
+    const best = done.reduce<{ userId: number; cornaldo: number | null } | null>(
+      (top, session) => ((session.cornaldo ?? 0) > (top?.cornaldo ?? 0) ? session : top),
+      null,
+    )
+    if (best?.cornaldo) {
+      items.push(`mejor cornaldo ${best.cornaldo} · ${names.get(best.userId) ?? ''}`)
+    }
+  }
+
+  // Quién se cruza con quién: mismo día, misma hora.
+  const meetings = new Map<string, string[]>()
+  for (const plan of plans) {
+    const name = plan.going && plan.at ? names.get(plan.userId) : undefined
+    if (!name) continue
+    const slot = `${plan.day} ${plan.at}`
+    meetings.set(slot, [...(meetings.get(slot) ?? []), name])
+  }
+  for (const [slot, who] of meetings) {
+    if (who.length < 2) continue
+    const [day, at] = slot.split(' ')
+    items.push(`${longDay(day)} ${at} · ${who.join(' + ')}`)
   }
 
   return items

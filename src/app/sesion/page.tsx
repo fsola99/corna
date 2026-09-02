@@ -1,8 +1,9 @@
 import { and, asc, desc, eq, ne } from 'drizzle-orm'
 import { redirect } from 'next/navigation'
+import { ExerciseSelect } from '@/components/exercise-select'
 import { Header } from '@/components/header'
 import { db } from '@/db'
-import { exercises, routines, sessionExercises, setLogs, workoutSessions } from '@/db/schema'
+import { type Exercise, exercises, routines, sessionExercises, setLogs, workoutSessions } from '@/db/schema'
 import { activeGroup } from '@/lib/groups'
 import { requireUser } from '@/lib/session'
 import { openSessionId } from '@/lib/workout'
@@ -15,9 +16,9 @@ import {
   postpone,
   removeRow,
   setRowStatus,
+  swapExercise,
   undoLastSet,
 } from './actions'
-import { Elapsed } from './elapsed'
 import { FinishForm } from './finish-form'
 
 type Row = {
@@ -98,21 +99,19 @@ export default async function SessionPage() {
   const active = pending[0]
   const queue = pending.slice(1)
   const closed = rows.filter((r) => r.status !== 'pending')
-  const zones = [...new Set(catalog.map((e) => e.zone))]
   const totalSets = logs.length
 
   return (
     <>
       <Header user={me} group={group} active="sesion" />
 
-      <main className="mx-auto max-w-3xl px-4 pt-8 pb-16">
+      <main className="mx-auto max-w-3xl px-4 pt-8 pb-40">
         <div className="border-ink flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b-2 pb-3">
           <h1 className="font-head text-3xl leading-none font-black tracking-tight uppercase sm:text-5xl">
             {session.routineName ?? 'Sesión suelta'}
           </h1>
-          <p className="font-head text-lg font-black tracking-[0.15em] uppercase">
-            <Elapsed since={session.startedAt.toISOString()} />
-            <span className="opacity-50"> · {longDay(session.day)}</span>
+          <p className="font-head text-teal text-lg font-black tracking-[0.15em] uppercase">
+            en curso <span className="opacity-50">· {longDay(session.day)}</span>
           </p>
         </div>
         <p className="mt-2 text-sm opacity-70">
@@ -126,18 +125,19 @@ export default async function SessionPage() {
             row={active}
             sets={doneSets.get(active.exerciseId) ?? []}
             last={lastTime.get(active.exerciseId)}
+            catalog={catalog}
           />
         ) : (
           <p className="ink-flat mt-6 border-dashed px-5 py-8 text-center text-base">
             {rows.length === 0
               ? 'La sesión está vacía. Sumá ejercicios acá abajo.'
-              : 'Pasaste por todos los ejercicios. Cerrá la sesión cuando quieras.'}
+              : 'Pasaste por todos los ejercicios. Terminá la sesión cuando quieras.'}
           </p>
         )}
 
         {queue.length > 0 && (
           <section className="mt-8">
-            <h2 className="font-head text-blue text-sm font-black tracking-[0.25em] uppercase">
+            <h2 className="font-head text-teal text-sm font-black tracking-[0.25em] uppercase">
               En cola
             </h2>
             <ul className="border-ink mt-2 border-t-2">
@@ -198,44 +198,42 @@ export default async function SessionPage() {
           </section>
         )}
 
-        <form action={addExerciseToSession} className="ink bg-paper mt-10 flex flex-wrap gap-3 p-5">
-          <label className="min-w-52 flex-1">
-            <span className="font-head block text-sm font-bold tracking-[0.2em] uppercase">
-              Sumar un ejercicio
-            </span>
-            <select
-              name="exerciseId"
-              className="ink-flat bg-paper font-head mt-1 w-full px-3 py-2.5 text-base font-black tracking-wide uppercase"
+        <form action={addExerciseToSession} className="ink bg-paper-2 mt-10 p-5">
+          <span className="font-head block text-sm font-bold tracking-[0.2em] uppercase">
+            Sumar un ejercicio
+          </span>
+          <p className="mb-2 text-xs opacity-60">
+            No queda guardado en la rutina: es sólo para hoy.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <ExerciseSelect catalog={catalog} className="min-w-52 flex-1" label="Ejercicio a sumar" />
+            <button
+              type="submit"
+              name="donde"
+              value="ahora"
+              className="ink-flat ink-press bg-paper-2 font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
             >
-              {zones.map((zone) => (
-                <optgroup key={zone} label={zone}>
-                  {catalog
-                    .filter((e) => e.zone === zone)
-                    .map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.name}
-                      </option>
-                    ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            className="ink-flat ink-press bg-paper font-head self-end px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
-          >
-            Sumar
-          </button>
+              Ahora
+            </button>
+            <button
+              type="submit"
+              name="donde"
+              value="final"
+              className="ink-flat ink-press bg-paper-2 font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
+            >
+              Al final
+            </button>
+          </div>
         </form>
 
         <div className="mt-10">
-          <FinishForm />
+          <FinishForm startedAt={session.startedAt.toISOString()} sets={totalSets} />
         </div>
 
         <form action={discardSession} className="mt-6">
           <button
             type="submit"
-            className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-pink decoration-2 underline-offset-4 opacity-60"
+            className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-rust decoration-2 underline-offset-4 opacity-60"
           >
             Descartar esta sesión
           </button>
@@ -249,10 +247,12 @@ function ActiveCard({
   row,
   sets,
   last,
+  catalog,
 }: {
   row: Row
   sets: { reps: number; weightKg: number | null }[]
   last?: { reps: number; weightKg: number | null }
+  catalog: Exercise[]
 }) {
   const reference = sets.at(-1) ?? last
   const target = `${row.targetSets} × ${row.targetReps}${
@@ -260,7 +260,7 @@ function ActiveCard({
   }`
 
   return (
-    <section className="ink bg-pink mt-6 p-5 sm:p-7">
+    <section className="ink bg-rust mt-6 p-5 sm:p-7">
       <span className="font-head text-sm font-black tracking-[0.3em] uppercase">Ahora</span>
       <h2 className="font-head text-4xl leading-none font-black tracking-tight uppercase sm:text-6xl">
         {row.name}
@@ -269,7 +269,7 @@ function ActiveCard({
       <p className="font-head mt-2 text-base font-bold tracking-[0.1em] uppercase">
         Objetivo {target}
         {last && (
-          <span className="opacity-60">
+          <span className="opacity-70">
             {' '}
             · la vez pasada {last.reps}
             {last.weightKg !== null && ` × ${last.weightKg} kg`}
@@ -284,7 +284,7 @@ function ActiveCard({
             <span
               key={i}
               className={`border-ink font-head flex h-11 min-w-11 items-center justify-center border-2 px-2 text-base font-black ${
-                set ? 'bg-ink text-pink' : 'border-dashed opacity-50'
+                set ? 'bg-paper text-ink' : 'border-dashed opacity-60'
               }`}
             >
               {set ? `${set.reps}${set.weightKg !== null ? `×${set.weightKg}` : ''}` : '—'}
@@ -326,7 +326,7 @@ function ActiveCard({
         </label>
         <button
           type="submit"
-          className="ink-sm ink-press bg-paper font-display px-5 py-3 text-base"
+          className="ink-sm ink-press bg-paper-2 font-display px-5 py-3 text-base"
         >
           Anotar serie
         </button>
@@ -340,6 +340,33 @@ function ActiveCard({
         <SmallButton action={setRowStatus.bind(null, row.id, 'done')}>Listo</SmallButton>
         <SmallButton action={setRowStatus.bind(null, row.id, 'skipped')}>Saltear</SmallButton>
       </div>
+
+      <details className="border-ink mt-5 border-t-2 pt-5">
+        <summary className="font-head cursor-pointer text-sm font-black tracking-[0.15em] uppercase">
+          Hacer otro en su lugar
+        </summary>
+        <p className="mt-1 text-xs opacity-70">
+          Se queda con el mismo objetivo y el mismo lugar en la cola. La rutina no se toca.
+        </p>
+        <form
+          action={swapExercise.bind(null, row.id)}
+          className="mt-2 flex flex-wrap items-end gap-3"
+        >
+          <ExerciseSelect
+            catalog={catalog}
+            className="min-w-52 flex-1"
+            label={`Reemplazo de ${row.name}`}
+            firstZone={row.zone}
+            exclude={row.exerciseId}
+          />
+          <button
+            type="submit"
+            className="ink-flat ink-press bg-paper-2 font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
+          >
+            Cambiar
+          </button>
+        </form>
+      </details>
     </section>
   )
 }
@@ -358,7 +385,7 @@ function SmallButton({
       <button
         type="submit"
         aria-label={label}
-        className="ink-flat ink-press bg-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
+        className="ink-flat ink-press bg-paper-2 font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
       >
         {children}
       </button>

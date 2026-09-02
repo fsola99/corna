@@ -1,11 +1,11 @@
 import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm'
 import Link from 'next/link'
 import { Header } from '@/components/header'
-import { Horns } from '@/components/horns'
+import { Sigil } from '@/components/sigil'
 import { ProgressChart, type Point } from '@/components/progress-chart'
 import { db } from '@/db'
 import { exercises, routines, setLogs, workoutSessions } from '@/db/schema'
-import { cornaldoLabel } from '@/lib/cornaldo'
+import { cornaldoLabel, cornaldoMark } from '@/lib/cornaldo'
 import { groupMembers, requireGroup } from '@/lib/groups'
 import { requireUser } from '@/lib/session'
 import { longDay } from '@/lib/week'
@@ -71,7 +71,7 @@ export default async function HistorialPage({
               href={friend.id === me.id ? '/historial' : `/historial?de=${friend.id}`}
               aria-current={friend.id === who ? 'page' : undefined}
               className={`font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase ${
-                friend.id === who ? 'ink-flat bg-pink' : 'ink-flat bg-paper opacity-60'
+                friend.id === who ? 'ink-flat bg-rust' : 'ink-flat bg-paper-2 opacity-60'
               }`}
             >
               {friend.name}
@@ -88,7 +88,7 @@ export default async function HistorialPage({
         ) : (
           <>
             {picked && (
-              <section className="ink bg-paper mt-8 p-5 sm:p-7">
+              <section className="ink bg-paper-2 mt-8 p-5 sm:p-7">
                 <form method="get" className="mb-5 flex flex-wrap items-end gap-3">
                   {!isMe && <input type="hidden" name="de" value={who} />}
                   <label className="min-w-52 flex-1">
@@ -98,7 +98,7 @@ export default async function HistorialPage({
                     <select
                       name="ej"
                       defaultValue={picked.id}
-                      className="ink-flat bg-paper font-head mt-1 w-full px-3 py-2.5 text-base font-black tracking-wide uppercase"
+                      className="ink-flat bg-paper-2 font-head mt-1 w-full px-3 py-2.5 text-base font-black tracking-wide uppercase"
                     >
                       {logged.map((exercise) => (
                         <option key={exercise.id} value={exercise.id}>
@@ -109,7 +109,7 @@ export default async function HistorialPage({
                   </label>
                   <button
                     type="submit"
-                    className="ink-flat ink-press bg-paper font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
+                    className="ink-flat ink-press bg-paper-2 font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
                   >
                     Ver
                   </button>
@@ -120,7 +120,7 @@ export default async function HistorialPage({
             )}
 
             <section className="mt-10">
-              <h2 className="font-head text-blue text-sm font-black tracking-[0.25em] uppercase">
+              <h2 className="font-head text-teal text-sm font-black tracking-[0.25em] uppercase">
                 {isMe ? 'Tus sesiones' : `Sesiones de ${whoName}`}
               </h2>
 
@@ -142,10 +142,12 @@ export default async function HistorialPage({
                         </span>
 
                         {session.cornaldo !== null && (
-                          <span className="flex items-center gap-1.5">
+                          <span
+                            className={`flex items-center gap-1.5 ${cornaldoMark(session.cornaldo)}`}
+                          >
                             <span className="flex gap-0.5" aria-hidden="true">
                               {[1, 2, 3, 4, 5].map((step) => (
-                                <Horns
+                                <Sigil
                                   key={step}
                                   filled={step <= session.cornaldo!}
                                   className={`h-4 w-4 ${step <= session.cornaldo! ? '' : 'opacity-25'}`}
@@ -163,6 +165,17 @@ export default async function HistorialPage({
                         {Number(session.sets)} {Number(session.sets) === 1 ? 'serie' : 'series'}
                         {volume > 0 && ` · ${volume.toLocaleString('es-AR')} kg movidos`}
                         {minutes !== null && ` · ${minutes} min`}
+                        {isMe && (
+                          <>
+                            {' · '}
+                            <Link
+                              href={`/historial/${session.id}`}
+                              className="font-head text-sm font-bold tracking-[0.15em] uppercase underline decoration-teal decoration-2 underline-offset-4 opacity-100"
+                            >
+                              editar
+                            </Link>
+                          </>
+                        )}
                       </p>
 
                       {session.note && <p className="mt-1 text-sm italic">«{session.note}»</p>}
