@@ -37,7 +37,7 @@ export default async function InvitePage({
       <h1 className="font-display overprint overprint-register text-6xl">CORNA</h1>
 
       {!valid ? (
-        <div className="ink bg-paper w-full p-6 text-center">
+        <div className="ink bg-paper-2 w-full p-6 text-center">
           <p className="font-head text-2xl leading-tight font-black tracking-wide uppercase">
             Esta invitación ya no sirve
           </p>
@@ -46,13 +46,13 @@ export default async function InvitePage({
           </p>
           <Link
             href="/"
-            className="font-head mt-4 inline-block text-sm font-bold tracking-[0.2em] uppercase underline decoration-pink decoration-2 underline-offset-4"
+            className="font-head mt-4 inline-block text-sm font-bold tracking-[0.2em] uppercase underline decoration-rust decoration-2 underline-offset-4"
           >
             Ir al inicio
           </Link>
         </div>
       ) : (
-        <div className="ink bg-paper w-full p-6 text-center">
+        <div className="ink bg-paper-2 w-full p-6 text-center">
           <p className="font-head text-sm font-black tracking-[0.3em] uppercase opacity-60">
             Te invitaron a
           </p>
@@ -65,7 +65,7 @@ export default async function InvitePage({
             <form action={acceptInvite.bind(null, code)} className="mt-6">
               <button
                 type="submit"
-                className="ink-sm ink-press bg-pink font-display w-full py-4 text-xl"
+                className="ink-sm ink-press bg-rust font-display w-full py-4 text-xl"
               >
                 Entrar al grupo
               </button>
@@ -74,13 +74,13 @@ export default async function InvitePage({
             <div className="mt-6 space-y-3">
               <Link
                 href={`/registro?i=${encodeURIComponent(code)}`}
-                className="ink-sm ink-press bg-pink font-display block w-full py-4 text-xl"
+                className="ink-sm ink-press bg-rust font-display block w-full py-4 text-xl"
               >
                 Crear cuenta
               </Link>
               <Link
                 href={`/login?i=${encodeURIComponent(code)}`}
-                className="font-head block text-sm font-bold tracking-[0.2em] uppercase underline decoration-blue decoration-2 underline-offset-4"
+                className="font-head block text-sm font-bold tracking-[0.2em] uppercase underline decoration-teal decoration-2 underline-offset-4"
               >
                 Ya tengo cuenta
               </Link>

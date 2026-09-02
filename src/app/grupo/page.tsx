@@ -63,7 +63,7 @@ export default async function GroupPage() {
           {!isOwner && ' · lo administra el dueño'}
         </p>
 
-        <section className="ink bg-paper mt-8 p-5">
+        <section className="ink bg-paper-2 mt-8 p-5">
           <h2 className="font-head text-xl font-black tracking-wide uppercase">Invitar</h2>
           {invite ? (
             <>
@@ -95,7 +95,7 @@ export default async function GroupPage() {
         </section>
 
         <section className="mt-10">
-          <h2 className="font-head text-blue text-sm font-black tracking-[0.25em] uppercase">
+          <h2 className="font-head text-teal text-sm font-black tracking-[0.25em] uppercase">
             Integrantes
           </h2>
           <ul className="border-ink mt-2 border-t-2">
@@ -107,7 +107,7 @@ export default async function GroupPage() {
                 <div className="min-w-0">
                   <span className="font-head text-lg leading-tight font-black tracking-wide uppercase">
                     {member.name}
-                    {member.id === user.id && <span className="text-pink"> ◆</span>}
+                    {member.id === user.id && <span className="text-rust"> ◆</span>}
                   </span>
                   <span className="block text-xs opacity-60">
                     {member.id === group.ownerId && 'dueño · '}
@@ -134,7 +134,7 @@ export default async function GroupPage() {
         </section>
 
         <section className="mt-10">
-          <h2 className="font-head text-blue text-sm font-black tracking-[0.25em] uppercase">
+          <h2 className="font-head text-teal text-sm font-black tracking-[0.25em] uppercase">
             Tus grupos
           </h2>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -142,7 +142,7 @@ export default async function GroupPage() {
               other.id === group.id ? (
                 <span
                   key={other.id}
-                  className="ink-flat bg-pink font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
+                  className="ink-flat bg-rust font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
                 >
                   {other.name}
                 </span>
@@ -154,7 +154,7 @@ export default async function GroupPage() {
             )}
             <Link
               href="/grupo/nuevo"
-              className="ink-flat ink-press bg-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
+              className="ink-flat ink-press bg-paper-2 font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
             >
               + Otro grupo
             </Link>
@@ -166,7 +166,7 @@ export default async function GroupPage() {
             <form action={deleteGroup.bind(null, group.id)}>
               <button
                 type="submit"
-                className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-pink decoration-2 underline-offset-4 opacity-60"
+                className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-rust decoration-2 underline-offset-4 opacity-60"
               >
                 Borrar el grupo
               </button>
@@ -178,7 +178,7 @@ export default async function GroupPage() {
             <form action={leaveGroup.bind(null, group.id)}>
               <button
                 type="submit"
-                className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-pink decoration-2 underline-offset-4 opacity-60"
+                className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-rust decoration-2 underline-offset-4 opacity-60"
               >
                 Salir del grupo
               </button>
@@ -204,7 +204,7 @@ function SmallButton({
       <button
         type="submit"
         aria-label={label}
-        className="ink-flat ink-press bg-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
+        className="ink-flat ink-press bg-paper-2 font-head px-3 py-1.5 text-sm font-black tracking-[0.15em] uppercase"
       >
         {children}
       </button>

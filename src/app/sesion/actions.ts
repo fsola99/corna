@@ -23,6 +23,10 @@ async function ownRow(id: number, userId: number) {
       id: sessionExercises.id,
       sessionId: sessionExercises.sessionId,
       exerciseId: sessionExercises.exerciseId,
+      position: sessionExercises.position,
+      targetSets: sessionExercises.targetSets,
+      targetReps: sessionExercises.targetReps,
+      targetWeightKg: sessionExercises.targetWeightKg,
     })
     .from(sessionExercises)
     .innerJoin(workoutSessions, eq(workoutSessions.id, sessionExercises.sessionId))
@@ -165,20 +169,63 @@ export async function setRowStatus(rowId: number, status: 'pending' | 'done' | '
   revalidatePath('/sesion')
 }
 
+/**
+ * Suma un ejercicio a la sesión en curso. Con `donde=ahora` entra al frente de
+ * la cola; con cualquier otro valor, al final.
+ */
 export async function addExerciseToSession(formData: FormData) {
   const { id: userId } = await requireUser()
   const sessionId = await openSessionId(userId)
   const exerciseId = Number(formData.get('exerciseId'))
   if (!sessionId || !Number.isFinite(exerciseId)) return
 
-  const [{ last }] = await db
-    .select({ last: sql<number>`coalesce(max(${sessionExercises.position}), -1)` })
+  const first = String(formData.get('donde') ?? '') === 'ahora'
+  const [{ edge }] = await db
+    .select({
+      edge: first
+        ? sql<number>`coalesce(min(${sessionExercises.position}), 1) - 1`
+        : sql<number>`coalesce(max(${sessionExercises.position}), -1) + 1`,
+    })
     .from(sessionExercises)
     .where(eq(sessionExercises.sessionId, sessionId))
 
-  await db
-    .insert(sessionExercises)
-    .values({ sessionId, exerciseId, position: Number(last) + 1 })
+  await db.insert(sessionExercises).values({ sessionId, exerciseId, position: Number(edge) })
+
+  revalidatePath('/sesion')
+}
+
+/**
+ * Cambia un ejercicio por otro sin tocar la rutina: el objetivo y el lugar en
+ * la cola son los mismos. Si el que sale ya tenía series anotadas queda cerrado
+ * en su lugar, para no perderlas.
+ */
+export async function swapExercise(rowId: number, formData: FormData) {
+  const { id: userId } = await requireUser()
+  const row = await ownRow(rowId, userId)
+  const exerciseId = Number(formData.get('exerciseId'))
+  if (!Number.isFinite(exerciseId) || exerciseId === row.exerciseId) return
+
+  const [{ logged }] = await db
+    .select({ logged: sql<number>`count(*)` })
+    .from(setLogs)
+    .where(and(eq(setLogs.sessionId, row.sessionId), eq(setLogs.exerciseId, row.exerciseId)))
+
+  if (Number(logged) > 0) {
+    await db.update(sessionExercises).set({ status: 'done' }).where(eq(sessionExercises.id, row.id))
+    await db.insert(sessionExercises).values({
+      sessionId: row.sessionId,
+      exerciseId,
+      position: row.position,
+      targetSets: row.targetSets,
+      targetReps: row.targetReps,
+      targetWeightKg: row.targetWeightKg,
+    })
+  } else {
+    await db
+      .update(sessionExercises)
+      .set({ exerciseId })
+      .where(eq(sessionExercises.id, row.id))
+  }
 
   revalidatePath('/sesion')
 }
@@ -198,6 +245,19 @@ export async function finishSession(formData: FormData) {
 
   const cornaldo = Number(formData.get('cornaldo'))
   const note = String(formData.get('note') ?? '').trim()
+
+  // Lo que quedó pendiente se cierra solo: hecho si llegó a tener series,
+  // salteado si no. Así una sesión se termina de un botón.
+  await db
+    .update(sessionExercises)
+    .set({
+      status: sql`case when exists (
+        select 1 from ${setLogs}
+        where ${setLogs.sessionId} = ${sessionExercises.sessionId}
+          and ${setLogs.exerciseId} = ${sessionExercises.exerciseId}
+      ) then 'done' else 'skipped' end`,
+    })
+    .where(and(eq(sessionExercises.sessionId, sessionId), eq(sessionExercises.status, 'pending')))
 
   await db
     .update(workoutSessions)

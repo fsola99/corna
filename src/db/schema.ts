@@ -97,7 +97,10 @@ export const routineExercises = pgTable('routine_exercises', {
   targetWeightKg: real('target_weight_kg'),
 })
 
-/** Intención: "el martes voy". Independiente de si después entrenó. */
+/**
+ * Intención: "el martes voy, a las 19:30". Independiente de si después
+ * entrenó. `at` es la hora en 'HH:MM' local, nula cuando todavía no la definió.
+ */
 export const attendance = pgTable(
   'attendance',
   {
@@ -106,6 +109,7 @@ export const attendance = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     day: date('day').notNull(),
     going: boolean('going').notNull().default(true),
+    at: text('at'),
   },
   (t) => [primaryKey({ columns: [t.userId, t.day] })],
 )

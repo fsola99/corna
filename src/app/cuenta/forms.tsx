@@ -12,7 +12,7 @@ export function AccountForms({ name, email }: { name: string; email: string }) {
 
   return (
     <div className="mt-8 space-y-5">
-      <form action={rename} className="ink bg-paper p-5">
+      <form action={rename} className="ink bg-paper-2 p-5">
         <h2 className="font-head text-xl font-black tracking-wide uppercase">Tu nombre</h2>
         <p className="mt-1 mb-3 text-sm opacity-70">
           Así te ven en la grilla. Cambiarlo no toca tus rutinas ni tu historial.
@@ -29,7 +29,7 @@ export function AccountForms({ name, email }: { name: string; email: string }) {
           <button
             type="submit"
             disabled={renaming}
-            className="ink-flat ink-press bg-paper font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase disabled:opacity-60"
+            className="ink-flat ink-press bg-paper-2 font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase disabled:opacity-60"
           >
             Guardar
           </button>
@@ -37,7 +37,7 @@ export function AccountForms({ name, email }: { name: string; email: string }) {
         <Feedback state={nameState} />
       </form>
 
-      <div className="ink bg-paper p-5">
+      <div className="ink bg-paper-2 p-5">
         <h2 className="font-head text-xl font-black tracking-wide uppercase">Email</h2>
         <p className="mt-1 text-sm opacity-70">
           Con este entrás. Es fijo: la cuenta se identifica por acá.
@@ -45,7 +45,7 @@ export function AccountForms({ name, email }: { name: string; email: string }) {
         <p className="font-head mt-2 text-lg font-black">{email}</p>
       </div>
 
-      <form action={changePass} className="ink bg-paper p-5">
+      <form action={changePass} className="ink bg-paper-2 p-5">
         <h2 className="font-head text-xl font-black tracking-wide uppercase">Contraseña</h2>
         <div className="mt-3 space-y-4">
           <label className="block">
@@ -77,7 +77,7 @@ export function AccountForms({ name, email }: { name: string; email: string }) {
         <button
           type="submit"
           disabled={changing}
-          className="ink-flat ink-press bg-paper font-head mt-4 px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase disabled:opacity-60"
+          className="ink-flat ink-press bg-paper-2 font-head mt-4 px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase disabled:opacity-60"
         >
           Cambiar
         </button>
@@ -93,7 +93,7 @@ function Feedback({ state }: { state: AccountState }) {
     <p
       aria-live="polite"
       className={`font-head mt-3 border-2 px-3 py-2 text-sm font-bold tracking-wide uppercase ${
-        state.error ? 'border-ink bg-pink' : 'border-ink bg-paper-2'
+        state.error ? 'border-ink bg-rust' : 'border-ink bg-paper-2'
       }`}
     >
       {state.error ?? state.ok}

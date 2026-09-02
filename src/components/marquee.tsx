@@ -4,7 +4,7 @@ export function Marquee({ items }: { items: string[] }) {
   const run = [...items, ...items]
 
   return (
-    <div className="overflow-hidden border-y-2 border-ink bg-blue py-1.5">
+    <div className="overflow-hidden border-y-2 border-ink bg-teal py-1.5">
       <div className="marquee-track flex w-max whitespace-nowrap">
         {run.map((item, i) => (
           <span
@@ -12,7 +12,7 @@ export function Marquee({ items }: { items: string[] }) {
             className="font-head text-[15px] font-black tracking-[0.18em] text-paper uppercase"
           >
             {item}
-            <span className="px-4 text-pink">◆</span>
+            <span className="text-paper/50 px-4">◆</span>
           </span>
         ))}
       </div>

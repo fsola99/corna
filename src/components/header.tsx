@@ -41,7 +41,7 @@ export function Header({
               aria-current={active === tab.key ? 'page' : undefined}
               className={`font-head px-1.5 py-1 text-xs font-black tracking-wide uppercase sm:px-3 sm:text-lg sm:tracking-widest ${
                 active === tab.key
-                  ? 'ink-flat bg-pink text-ink'
+                  ? 'ink-flat bg-rust text-ink'
                   : 'border-2 border-transparent hover:border-ink'
               }`}
             >
@@ -53,14 +53,14 @@ export function Header({
         <div className="order-2 flex shrink-0 items-center gap-3 sm:order-3">
           <Link
             href="/cuenta"
-            className="font-head text-sm font-bold tracking-widest whitespace-nowrap uppercase underline decoration-blue decoration-2 underline-offset-4"
+            className="font-head text-sm font-bold tracking-widest whitespace-nowrap uppercase underline decoration-teal decoration-2 underline-offset-4"
           >
             {user.name}
           </Link>
           <form action={logout}>
             <button
               type="submit"
-              className="font-head text-sm font-bold tracking-widest whitespace-nowrap uppercase underline decoration-pink decoration-2 underline-offset-4 opacity-70"
+              className="font-head text-sm font-bold tracking-widest whitespace-nowrap uppercase underline decoration-rust decoration-2 underline-offset-4 opacity-70"
             >
               salir
             </button>

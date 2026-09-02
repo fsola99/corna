@@ -91,11 +91,11 @@ export function ProgressChart({
           </g>
         ))}
 
-        <path d={path} fill="none" stroke="var(--color-blue)" strokeWidth={2} strokeLinejoin="round" />
+        <path d={path} fill="none" stroke="var(--color-teal)" strokeWidth={2} strokeLinejoin="round" />
 
         {points.map((point, i) => (
           <g key={point.day + i}>
-            <circle cx={x(i)} cy={y(point.value)} r={5} fill="var(--color-blue)" stroke="var(--color-paper)" strokeWidth={2}>
+            <circle cx={x(i)} cy={y(point.value)} r={5} fill="var(--color-teal)" stroke="var(--color-paper)" strokeWidth={2}>
               <title>{`${shortDay(point.day)} · ${point.value} ${unit} × ${point.reps} reps · ${point.sets} series`}</title>
             </circle>
             {labelled.has(i) && (

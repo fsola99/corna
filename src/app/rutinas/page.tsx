@@ -46,13 +46,13 @@ export default async function RoutinesPage() {
             {list.map((routine, i) => (
               <li
                 key={routine.id}
-                className="ink bg-paper flex flex-wrap items-center justify-between gap-4 p-5"
+                className="ink bg-paper-2 flex flex-wrap items-center justify-between gap-4 p-5"
                 style={{ rotate: i % 2 === 0 ? '-0.35deg' : '0.35deg' }}
               >
                 <div>
                   <Link
                     href={`/rutinas/${routine.id}`}
-                    className="font-head block text-2xl leading-none font-black tracking-wide uppercase underline decoration-pink decoration-[3px] underline-offset-[6px] sm:text-3xl"
+                    className="font-head block text-2xl leading-none font-black tracking-wide uppercase underline decoration-rust decoration-[3px] underline-offset-[6px] sm:text-3xl"
                   >
                     {routine.name}
                   </Link>
@@ -63,7 +63,7 @@ export default async function RoutinesPage() {
                 </div>
 
                 {routine.isDefault ? (
-                  <span className="ink-flat bg-blue text-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.2em] uppercase">
+                  <span className="ink-flat bg-teal text-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.2em] uppercase">
                     Por defecto
                   </span>
                 ) : (
@@ -71,7 +71,7 @@ export default async function RoutinesPage() {
                     <input type="hidden" name="routineId" value={routine.id} />
                     <button
                       type="submit"
-                      className="ink-flat ink-press bg-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.2em] uppercase"
+                      className="ink-flat ink-press bg-paper-2 font-head px-3 py-1.5 text-sm font-black tracking-[0.2em] uppercase"
                     >
                       Usar por defecto
                     </button>
@@ -82,7 +82,7 @@ export default async function RoutinesPage() {
           </ul>
         )}
 
-        <form action={createRoutine} className="ink bg-paper mt-10 flex flex-wrap gap-3 p-5">
+        <form action={createRoutine} className="ink bg-paper-2 mt-10 flex flex-wrap gap-3 p-5">
           <label className="min-w-52 flex-1">
             <span className="font-head block text-sm font-bold tracking-[0.2em] uppercase">
               Rutina nueva
@@ -97,7 +97,7 @@ export default async function RoutinesPage() {
           </label>
           <button
             type="submit"
-            className="ink-sm ink-press bg-pink font-display self-end px-5 py-3 text-base"
+            className="ink-sm ink-press bg-rust font-display self-end px-5 py-3 text-base"
           >
             Crear
           </button>

@@ -1,6 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ExerciseSelect } from '@/components/exercise-select'
 import { Header } from '@/components/header'
 import { db } from '@/db'
 import { exercises, routineExercises, routines } from '@/db/schema'
@@ -55,7 +56,7 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
       <main className="mx-auto max-w-3xl px-4 pt-8 pb-16">
         <Link
           href="/rutinas"
-          className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-blue decoration-2 underline-offset-4"
+          className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-teal decoration-2 underline-offset-4"
         >
           ← Todas tus rutinas
         </Link>
@@ -79,7 +80,7 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
             <button
               type="submit"
               formAction={makeDefault}
-              className="ink-flat ink-press bg-blue text-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.2em] uppercase"
+              className="ink-flat ink-press bg-teal text-paper font-head px-3 py-1.5 text-sm font-black tracking-[0.2em] uppercase"
             >
               Usar por defecto
             </button>
@@ -100,7 +101,7 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
                   key={row.id}
                   className="border-ink grid grid-cols-[2.2rem_1fr] items-center gap-x-3 gap-y-2 border-b-2 py-3 sm:grid-cols-[2.5rem_1fr_auto_auto]"
                 >
-                  <span className="font-head text-blue text-2xl leading-none font-black">
+                  <span className="font-head text-teal text-2xl leading-none font-black">
                     {String(i + 1).padStart(2, '0')}
                   </span>
 
@@ -163,40 +164,28 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
           {rows.length > 0 && (
             <button
               type="submit"
-              className="ink-sm ink-press bg-pink font-display mt-5 px-6 py-3 text-base"
+              className="ink-sm ink-press bg-rust font-display mt-5 px-6 py-3 text-base"
             >
               Guardar objetivos
             </button>
           )}
         </form>
 
-        <section className="ink bg-paper mt-10 space-y-6 p-5">
+        <section className="ink bg-paper-2 mt-10 space-y-6 p-5">
           <div>
             <h2 className="font-head text-xl font-black tracking-wide uppercase">
               Sumar del catálogo
             </h2>
             <form action={addExercise} className="mt-2 flex flex-wrap gap-3">
               <input type="hidden" name="routineId" value={routine.id} />
-              <select
-                name="exerciseId"
-                aria-label="Ejercicio del catálogo"
-                className="ink-flat bg-paper font-head min-w-52 flex-1 px-3 py-2.5 text-base font-black tracking-wide uppercase"
-              >
-                {zones.map((zone) => (
-                  <optgroup key={zone} label={zone}>
-                    {catalog
-                      .filter((e) => e.zone === zone)
-                      .map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.name}
-                        </option>
-                      ))}
-                  </optgroup>
-                ))}
-              </select>
+              <ExerciseSelect
+                catalog={catalog}
+                label="Ejercicio del catálogo"
+                className="min-w-52 flex-1"
+              />
               <button
                 type="submit"
-                className="ink-flat ink-press bg-paper font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
+                className="ink-flat ink-press bg-paper-2 font-head px-4 py-2.5 text-base font-black tracking-[0.15em] uppercase"
               >
                 Sumar
               </button>
@@ -223,7 +212,7 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
               <select
                 name="zone"
                 aria-label="Zona"
-                className="ink-flat bg-paper font-head px-3 py-2 text-base font-black tracking-wide uppercase"
+                className="ink-flat bg-paper-2 font-head px-3 py-2 text-base font-black tracking-wide uppercase"
               >
                 {zones.map((zone) => (
                   <option key={zone} value={zone}>
@@ -233,7 +222,7 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
               </select>
               <button
                 type="submit"
-                className="ink-flat ink-press bg-paper font-head px-4 py-2 text-base font-black tracking-[0.15em] uppercase"
+                className="ink-flat ink-press bg-paper-2 font-head px-4 py-2 text-base font-black tracking-[0.15em] uppercase"
               >
                 Crear
               </button>
@@ -245,7 +234,7 @@ export default async function RoutineEditor({ params }: { params: Promise<{ id: 
           <input type="hidden" name="routineId" value={routine.id} />
           <button
             type="submit"
-            className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-pink decoration-2 underline-offset-4 opacity-60"
+            className="font-head text-sm font-bold tracking-[0.2em] uppercase underline decoration-rust decoration-2 underline-offset-4 opacity-60"
           >
             Borrar esta rutina
           </button>

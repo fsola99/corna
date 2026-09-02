@@ -15,11 +15,11 @@ export const metadata: Metadata = {
   title: 'CORNA',
   description: 'Quién va al gimnasio esta semana, y cómo le fue.',
   // Abre a pantalla completa cuando se agrega a la pantalla de inicio.
-  appleWebApp: { capable: true, title: 'CORNA', statusBarStyle: 'default' },
+  appleWebApp: { capable: true, title: 'CORNA', statusBarStyle: 'black' },
 }
 
 export const viewport: Viewport = {
-  themeColor: '#e7e1ce',
+  themeColor: '#101513',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
