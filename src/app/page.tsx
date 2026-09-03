@@ -3,14 +3,15 @@ import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Marquee } from '@/components/marquee'
 import { db } from '@/db'
-import { attendance, routines, workoutSessions } from '@/db/schema'
+import { attendance, routines, weeklyPlans, workoutSessions } from '@/db/schema'
 import { groupMembers, requireGroup } from '@/lib/groups'
 import { meetups } from '@/lib/meetups'
+import { resolveWeek, seriesMap } from '@/lib/plans'
 import { requireUser } from '@/lib/session'
 import { openSessionId } from '@/lib/workout'
-import { localHour, longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
+import { localTime, longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
 import { startSession } from './sesion/actions'
-import { Calendar, type Plans } from './calendar'
+import { Calendar } from './calendar'
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ w?: string }> }) {
   const me = await requireUser()
@@ -25,16 +26,23 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   const inWeek = (col: typeof attendance.day | typeof workoutSessions.day) =>
     and(gte(col, days[0]), lte(col, days[days.length - 1]))
 
-  const [plans, done, myRoutines, currentSession] = await Promise.all([
+  const [exceptions, done, series, myRoutines, currentSession] = await Promise.all([
     db
-      .select({ userId: attendance.userId, day: attendance.day, at: attendance.at })
+      .select({
+        userId: attendance.userId,
+        day: attendance.day,
+        going: attendance.going,
+        startAt: attendance.startAt,
+        endAt: attendance.endAt,
+      })
       .from(attendance)
-      .where(and(inArray(attendance.userId, ids), eq(attendance.going, true), inWeek(attendance.day))),
+      .where(and(inArray(attendance.userId, ids), inWeek(attendance.day))),
     db
       .select({
         userId: workoutSessions.userId,
         day: workoutSessions.day,
         startedAt: workoutSessions.startedAt,
+        endedAt: workoutSessions.endedAt,
       })
       .from(workoutSessions)
       .where(
@@ -45,6 +53,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
         ),
       ),
     db
+      .select({
+        userId: weeklyPlans.userId,
+        weekday: weeklyPlans.weekday,
+        startAt: weeklyPlans.startAt,
+        endAt: weeklyPlans.endAt,
+      })
+      .from(weeklyPlans)
+      .where(inArray(weeklyPlans.userId, ids)),
+    db
       .select({ id: routines.id, name: routines.name, isDefault: routines.isDefault })
       .from(routines)
       .where(eq(routines.userId, me.id))
@@ -52,25 +69,27 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
     openSessionId(me.id),
   ])
 
-  const cells: Plans = {}
-  for (const plan of plans) {
-    cells[`${plan.userId}:${plan.day}`] = { at: plan.at, done: false }
-  }
-  // Una sesión terminada manda: si no había nada anotado, entra a la hora en que arrancó.
-  for (const session of done) {
-    const key = `${session.userId}:${session.day}`
-    cells[key] = { at: cells[key]?.at ?? localHour(session.startedAt), done: true }
-  }
+  const cells = resolveWeek({
+    days,
+    series,
+    exceptions,
+    done: done.map((session) => ({
+      userId: session.userId,
+      day: session.day,
+      startAt: localTime(session.startedAt),
+      endAt: localTime(session.endedAt ?? session.startedAt),
+    })),
+  })
 
   const names = new Map(members.map((member) => [member.id, member.name]))
   const ticker = meetups(
     Object.entries(cells).map(([key, plan]) => {
       const [userId, day] = key.split(':')
-      return { userId: Number(userId), day, at: plan.at }
+      return { userId: Number(userId), day, startAt: plan.startAt, endAt: plan.endAt }
     }),
   ).map(
     (meetup) =>
-      `${longDay(meetup.day)} ${meetup.hour} · ${meetup.userIds
+      `${longDay(meetup.day)} ${meetup.startAt}–${meetup.endAt} · ${meetup.userIds
         .map((id) => names.get(id) ?? '')
         .join(' + ')}`,
   )
@@ -102,6 +121,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
           days={days}
           members={members}
           plans={cells}
+          series={seriesMap(series)}
           meId={me.id}
           todayStr={todayStr}
         />

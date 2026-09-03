@@ -98,8 +98,31 @@ export const routineExercises = pgTable('routine_exercises', {
 })
 
 /**
- * Intención: "el martes voy, a las 19:30". Independiente de si después
- * entrenó. `at` es la hora en 'HH:MM' local, nula cuando todavía no la definió.
+ * La semana tipo: "los martes voy de 19:30 a 21:00", sin fecha. Vale para todas
+ * las semanas mientras el renglón exista. `weekday` va de 0 —lunes— a 5
+ * —sábado—, y el turno son dos horas 'HH:MM' locales.
+ */
+export const weeklyPlans = pgTable(
+  'weekly_plans',
+  {
+    userId: integer('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    weekday: integer('weekday').notNull(),
+    startAt: text('start_at').notNull(),
+    endAt: text('end_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.weekday] })],
+)
+
+/**
+ * Lo que pasa un día puntual, y lo que manda sobre la semana tipo: con `going`
+ * en verdadero el turno de ese día va de `startAt` a `endAt`, y en falso ese
+ * día no va aunque la semana tipo diga que sí. Sin renglón, el día lo decide
+ * la semana tipo.
+ *
+ * Las dos horas son 'HH:MM' locales, y quedan nulas cuando dijo que va pero
+ * todavía no marcó a qué hora.
  */
 export const attendance = pgTable(
   'attendance',
@@ -109,7 +132,8 @@ export const attendance = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     day: date('day').notNull(),
     going: boolean('going').notNull().default(true),
-    at: text('at'),
+    startAt: text('start_at'),
+    endAt: text('end_at'),
   },
   (t) => [primaryKey({ columns: [t.userId, t.day] })],
 )
@@ -169,4 +193,5 @@ export type Exercise = typeof exercises.$inferSelect
 export type Routine = typeof routines.$inferSelect
 export type SessionExercise = typeof sessionExercises.$inferSelect
 export type SetLog = typeof setLogs.$inferSelect
+export type WeeklyPlan = typeof weeklyPlans.$inferSelect
 export type WorkoutSession = typeof workoutSessions.$inferSelect

@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { Header } from '@/components/header'
-import { activeInvite, groupMembers, myGroups, requireGroup } from '@/lib/groups'
+import { activeInvite, groupMembers, MAX_MEMBERS, myGroups, requireGroup } from '@/lib/groups'
 import { requireUser } from '@/lib/session'
 import { longDay } from '@/lib/week'
 import Link from 'next/link'
@@ -29,6 +29,8 @@ export default async function GroupPage() {
     activeInvite(group.id),
     myGroups(user.id),
   ])
+
+  const full = members.length >= MAX_MEMBERS
 
   return (
     <>
@@ -59,13 +61,19 @@ export default async function GroupPage() {
         )}
 
         <p className="mt-2 text-sm opacity-70">
-          {members.length} {members.length === 1 ? 'integrante' : 'integrantes'}
+          {members.length} de {MAX_MEMBERS} {members.length === 1 ? 'integrante' : 'integrantes'}
+          {full && ' · completo'}
           {!isOwner && ' · lo administra el dueño'}
         </p>
 
         <section className="ink bg-paper-2 mt-8 p-5">
           <h2 className="font-head text-xl font-black tracking-wide uppercase">Invitar</h2>
-          {invite ? (
+          {full ? (
+            <p className="mt-1 text-sm opacity-70">
+              El grupo está completo: entran {MAX_MEMBERS} y cada uno tiene su tinta en la grilla.
+              Para sumar a alguien, primero tiene que salir otro.
+            </p>
+          ) : invite ? (
             <>
               <p className="mt-1 mb-3 text-sm opacity-70">
                 Pasales este link. Vence el {longDay(invite.expiresAt.toISOString().slice(0, 10))}.

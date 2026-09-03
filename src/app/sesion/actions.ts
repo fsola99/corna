@@ -14,7 +14,7 @@ import {
 } from '@/db/schema'
 import { requireUser } from '@/lib/session'
 import { openSessionId } from '@/lib/workout'
-import { localHour, today } from '@/lib/week'
+import { atOfSlot, slotOf, SLOTS_PER_HOUR, localTime, today, TOTAL_SLOTS } from '@/lib/week'
 
 /** Resuelve un renglón de sesión verificando que sea del usuario logueado. */
 async function ownRow(id: number, userId: number) {
@@ -77,10 +77,18 @@ export async function startSession(formData: FormData) {
     }
   }
 
-  // Arrancar una sesión también deja la marca en el calendario, a esta hora.
+  // Arrancar una sesión también deja la marca en el calendario: de ahora a una
+  // hora más. Si ya había un turno anotado ese día, ese manda y queda como está.
+  const from = Math.min(TOTAL_SLOTS - 1, Math.max(0, slotOf(localTime(new Date()))))
   await db
     .insert(attendance)
-    .values({ userId, day, going: true, at: localHour(new Date()) })
+    .values({
+      userId,
+      day,
+      going: true,
+      startAt: atOfSlot(from),
+      endAt: atOfSlot(Math.min(TOTAL_SLOTS, from + SLOTS_PER_HOUR)),
+    })
     .onConflictDoUpdate({ target: [attendance.userId, attendance.day], set: { going: true } })
 
   revalidatePath('/')
