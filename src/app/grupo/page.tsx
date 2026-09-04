@@ -179,7 +179,7 @@ export default async function GroupPage() {
                 Borrar el grupo
               </button>
               <p className="mt-1 text-xs opacity-50">
-                Desaparece la grilla compartida. Las rutinas y el historial de cada uno quedan.
+                Desaparece la grilla compartida. Las rutinas de cada uno quedan.
               </p>
             </form>
           ) : (

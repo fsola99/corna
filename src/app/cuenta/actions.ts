@@ -11,7 +11,7 @@ export type AccountState = { error?: string; ok?: string }
 
 const MIN_PASSWORD = 8
 
-/** Cambia sólo cómo te ven: la cuenta y todo tu historial siguen siendo los mismos. */
+/** Cambia sólo cómo te ven: la cuenta sigue siendo la misma. */
 export async function renameMe(_prev: AccountState, formData: FormData): Promise<AccountState> {
   const user = await requireUser()
   const name = String(formData.get('name') ?? '').trim()

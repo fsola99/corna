@@ -5,8 +5,6 @@ import type { Group, User } from '@/db/schema'
 const TABS = [
   { href: '/', label: 'Semana', key: 'semana' },
   { href: '/rutinas', label: 'Rutinas', key: 'rutinas' },
-  { href: '/sesion', label: 'Sesión', key: 'sesion' },
-  { href: '/historial', label: 'Historial', key: 'historial' },
   { href: '/grupo', label: 'Grupo', key: 'grupo' },
 ] as const
 

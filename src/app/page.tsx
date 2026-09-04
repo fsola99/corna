@@ -1,16 +1,14 @@
-import { and, eq, gte, inArray, isNotNull, lte } from 'drizzle-orm'
+import { and, gte, inArray, lte } from 'drizzle-orm'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 import { Marquee } from '@/components/marquee'
 import { db } from '@/db'
-import { attendance, routines, weeklyPlans, workoutSessions } from '@/db/schema'
+import { attendance, weeklyPlans } from '@/db/schema'
 import { groupMembers, requireGroup } from '@/lib/groups'
 import { meetups } from '@/lib/meetups'
 import { resolveWeek, seriesMap } from '@/lib/plans'
 import { requireUser } from '@/lib/session'
-import { openSessionId } from '@/lib/workout'
-import { localTime, longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
-import { startSession } from './sesion/actions'
+import { longDay, shiftWeek, today, weekLabel, weekOf } from '@/lib/week'
 import { Calendar } from './calendar'
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ w?: string }> }) {
@@ -23,10 +21,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
   const members = await groupMembers(group.id)
   const ids = members.map((member) => member.id)
 
-  const inWeek = (col: typeof attendance.day | typeof workoutSessions.day) =>
-    and(gte(col, days[0]), lte(col, days[days.length - 1]))
-
-  const [exceptions, done, series, myRoutines, currentSession] = await Promise.all([
+  const [exceptions, series] = await Promise.all([
     db
       .select({
         userId: attendance.userId,
@@ -36,20 +31,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
         endAt: attendance.endAt,
       })
       .from(attendance)
-      .where(and(inArray(attendance.userId, ids), inWeek(attendance.day))),
-    db
-      .select({
-        userId: workoutSessions.userId,
-        day: workoutSessions.day,
-        startedAt: workoutSessions.startedAt,
-        endedAt: workoutSessions.endedAt,
-      })
-      .from(workoutSessions)
       .where(
         and(
-          inArray(workoutSessions.userId, ids),
-          inWeek(workoutSessions.day),
-          isNotNull(workoutSessions.endedAt),
+          inArray(attendance.userId, ids),
+          gte(attendance.day, days[0]),
+          lte(attendance.day, days[days.length - 1]),
         ),
       ),
     db
@@ -61,25 +47,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
       })
       .from(weeklyPlans)
       .where(inArray(weeklyPlans.userId, ids)),
-    db
-      .select({ id: routines.id, name: routines.name, isDefault: routines.isDefault })
-      .from(routines)
-      .where(eq(routines.userId, me.id))
-      .orderBy(routines.id),
-    openSessionId(me.id),
   ])
 
-  const cells = resolveWeek({
-    days,
-    series,
-    exceptions,
-    done: done.map((session) => ({
-      userId: session.userId,
-      day: session.day,
-      startAt: localTime(session.startedAt),
-      endAt: localTime(session.endedAt ?? session.startedAt),
-    })),
-  })
+  const cells = resolveWeek({ days, series, exceptions })
 
   const names = new Map(members.map((member) => [member.id, member.name]))
   const ticker = meetups(
@@ -93,8 +63,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
         .map((id) => names.get(id) ?? '')
         .join(' + ')}`,
   )
-
-  const defaultRoutine = myRoutines.find((routine) => routine.isDefault) ?? myRoutines[0]
 
   return (
     <>
@@ -125,47 +93,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ w
           meId={me.id}
           todayStr={todayStr}
         />
-
-        <section className="border-ink/25 mt-10 border-t-2 pt-5">
-          {currentSession ? (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="font-head text-lg font-black tracking-wide uppercase">
-                Tenés una sesión abierta
-              </span>
-              <Link
-                href="/sesion"
-                className="ink-sm ink-press bg-rust font-head px-4 py-2 text-base font-black tracking-widest uppercase"
-              >
-                Seguir
-              </Link>
-            </div>
-          ) : (
-            <form action={startSession} className="flex flex-wrap items-center gap-2">
-              <span className="font-head mr-1 text-sm font-black tracking-[0.2em] uppercase opacity-55">
-                Entrenar ahora
-              </span>
-              <select
-                name="routineId"
-                defaultValue={defaultRoutine ? String(defaultRoutine.id) : 'libre'}
-                aria-label="Rutina"
-                className="ink-flat bg-paper-2 font-head px-2 py-1.5 text-base font-black tracking-wide uppercase"
-              >
-                {myRoutines.map((routine) => (
-                  <option key={routine.id} value={routine.id}>
-                    {routine.name}
-                  </option>
-                ))}
-                <option value="libre">Sesión suelta</option>
-              </select>
-              <button
-                type="submit"
-                className="ink-flat ink-press font-head px-3 py-1.5 text-base font-black tracking-widest uppercase"
-              >
-                Arrancar
-              </button>
-            </form>
-          )}
-        </section>
       </main>
     </>
   )

@@ -15,7 +15,7 @@ export function AccountForms({ name, email }: { name: string; email: string }) {
       <form action={rename} className="ink bg-paper-2 p-5">
         <h2 className="font-head text-xl font-black tracking-wide uppercase">Tu nombre</h2>
         <p className="mt-1 mb-3 text-sm opacity-70">
-          Así te ven en la grilla. Cambiarlo no toca tus rutinas ni tu historial.
+          Así te ven en la grilla. Cambiarlo no toca tus rutinas.
         </p>
         <div className="flex flex-wrap gap-3">
           <input

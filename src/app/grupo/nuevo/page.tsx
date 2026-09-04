@@ -19,7 +19,7 @@ export default async function NewGroupPage() {
         <p className="mt-2 text-sm opacity-70">
           {groups.length === 0
             ? 'Para arrancar necesitás un grupo: creá el tuyo, o entrá al de un amigo con el link que te pasó.'
-            : 'Podés estar en varios grupos a la vez. Tu historial es uno solo y te acompaña a todos.'}
+            : 'Podés estar en varios grupos a la vez. Tus rutinas son unas solas y te acompañan a todos.'}
         </p>
       </div>
 

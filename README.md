@@ -2,22 +2,13 @@
 
 Qué día y a qué hora va cada uno del grupo al gimnasio, para cruzarse.
 
-- **Semana**: el calendario, y todo lo demás cuelga de ahí. Lunes a sábado, de
-  07 a 22: tocás la casilla del día y la hora en que caés y quedás anotado; el
-  color dice quién es cada uno. La casilla se pone verdín cuando coinciden dos o
-  más, abajo quedan listados los cruces y la cinta de arriba los canta. Se marca
-  sola cuando terminás una sesión.
-- **Rutinas**: cada uno arma las suyas, con series, repeticiones y peso objetivo.
-  Una queda como la de por defecto.
-- **Sesión**: cola de ejercicios que se reordena sola cuando la máquina está
-  ocupada, cambio de un ejercicio por otro sin tocar la rutina, y registro de
-  cada serie. Abajo queda fija la barra que termina la sesión entera de un
-  toque: lo que no llegaste a hacer se cierra solo y la escala cornaldo del 1 al
-  5 es opcional.
-- **Historial**: sesiones pasadas con volumen, duración y cornaldo, y la curva de
-  la mejor serie de cada ejercicio. Las tuyas se editan enteras —día, puntaje,
-  nota y cada serie, una por una— o se borran. También podés ver el de tus
-  amigos.
+- **Semana**: el calendario, que es toda la app. Lunes a sábado, de 07 a 23:
+  marcás el turno en que vas —de qué hora a qué hora— y quedás anotado; el color
+  dice quién es cada uno. La semana tipo se carga una vez y vale para todas las
+  semanas; un día puntual se corre de horario o se cancela sin tocarla. Donde
+  coinciden dos o más se listan los cruces abajo y la cinta de arriba los canta.
+- **Rutinas**: cada uno arma las suyas, con series, repeticiones y peso objetivo,
+  por si las quiere tener a mano. Una queda como la de por defecto.
 
 Sale impresa sobre papel negro: tinta hueso, y encima cobre y verdín mal
 registrados, como una serigrafía barata. Se instala en la pantalla de inicio del
@@ -71,16 +62,16 @@ preview.
 ## Cuentas y grupos
 
 Cada uno se registra con email y contraseña. El nombre es sólo cómo lo ven los
-demás: cambiarlo no crea una persona nueva ni parte el historial.
+demás: cambiarlo no crea una persona nueva.
 
 Un grupo tiene un dueño, que es quien lo creó. El dueño genera un link de
 invitación —reutilizable, vence a los 7 días— y lo pega en el chat del grupo;
 quien lo abre se registra y entra. El dueño puede renovar o dar de baja el link,
 sacar integrantes, pasarle el grupo a otro, o borrarlo.
 
-Se puede estar en varios grupos. Las rutinas y el historial cuelgan de la
-persona, no del grupo, así que te acompañan a todos; lo único que el grupo
-define es quiénes aparecen en la grilla.
+Se puede estar en varios grupos. Las rutinas cuelgan de la persona, no del
+grupo, así que te acompañan a todos; lo único que el grupo define es quiénes
+aparecen en la grilla.
 
 ## Comandos
 
@@ -90,5 +81,4 @@ define es quiénes aparecen en la grilla.
 | `npm run build` | build de producción |
 | `npm run db:push` | aplica `src/db/schema.ts` a la base |
 | `npm run db:seed` | carga el catálogo de ejercicios |
-| `npm run db:demo` | carga sesiones de ejemplo para ver el historial (sólo local) |
 | `npm run typecheck` | TypeScript sin emitir |
