@@ -10,7 +10,6 @@ export type Source = 'once' | 'series' | 'moved'
 export type Plan = {
   startAt: string | null
   endAt: string | null
-  done: boolean
   source: Source
 }
 
@@ -28,7 +27,6 @@ export type ExceptionRow = {
   startAt: string | null
   endAt: string | null
 }
-export type DoneRow = { userId: number; day: string; startAt: string; endAt: string }
 
 export function seriesMap(rows: SeriesRow[]): Series {
   return Object.fromEntries(
@@ -38,20 +36,17 @@ export function seriesMap(rows: SeriesRow[]): Series {
 
 /**
  * Lo que hay que mostrar en cada día de la semana, resuelto en el orden en que
- * manda cada cosa: la semana tipo pone el piso, el turno de ese día la pisa
- * —corriéndolo de horario o cancelándolo—, y una sesión ya entrenada gana sobre
- * las dos, porque eso ya pasó.
+ * manda cada cosa: la semana tipo pone el piso y el turno de ese día la pisa,
+ * corriéndolo de horario o cancelándolo.
  */
 export function resolveWeek({
   days,
   series,
   exceptions,
-  done,
 }: {
   days: string[]
   series: SeriesRow[]
   exceptions: ExceptionRow[]
-  done: DoneRow[]
 }): Plans {
   const cells: Plans = {}
   const byWeekday = seriesMap(series)
@@ -64,7 +59,6 @@ export function resolveWeek({
       cells[`${row.userId}:${day}`] = {
         startAt: row.startAt,
         endAt: row.endAt,
-        done: false,
         source: 'series',
       }
     }
@@ -82,19 +76,7 @@ export function resolveWeek({
     cells[key] = {
       startAt: row.startAt,
       endAt: row.endAt,
-      done: false,
       source: !planned ? 'once' : same ? 'series' : 'moved',
-    }
-  }
-
-  for (const row of done) {
-    const key = `${row.userId}:${row.day}`
-    const before = cells[key]
-    cells[key] = {
-      startAt: before?.startAt ?? row.startAt,
-      endAt: before?.endAt ?? row.endAt,
-      done: true,
-      source: before?.source ?? 'once',
     }
   }
 

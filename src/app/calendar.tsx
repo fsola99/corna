@@ -32,7 +32,6 @@ type Block = Turn & {
   isMe: boolean
   startAt: string
   endAt: string
-  done: boolean
   source: Source
   lane: number
   lanes: number
@@ -128,7 +127,6 @@ export function Calendar({
             to,
             startAt,
             endAt,
-            done: 'done' in turn ? turn.done : false,
             source: 'source' in turn ? turn.source : 'series',
           },
         ])
@@ -160,9 +158,6 @@ export function Calendar({
     return { from: slotOf(turn.startAt), to: slotOf(turn.endAt) }
   }
 
-  const locked = (column: string) =>
-    scope === 'week' && shownPlans[`${meId}:${column}`]?.done === true
-
   /** El cuarto en el que cierra esa columna: el sábado más temprano que el resto. */
   const closes = (column: string) =>
     closingSlot(scope === 'week' ? weekdayOf(column) : Number(column))
@@ -182,7 +177,6 @@ export function Calendar({
               : {
                   startAt,
                   endAt,
-                  done: false,
                   source: !planned
                     ? 'once'
                     : planned.startAt === startAt && planned.endAt === endAt
@@ -207,7 +201,6 @@ export function Calendar({
    * bloque—, y tocar una que no lo pisa estira el turno hasta ahí.
    */
   const tapHour = (column: string, hourIndex: number) => {
-    if (locked(column)) return
     const from = hourIndex * SLOTS_PER_HOUR
     const to = Math.min(from + SLOTS_PER_HOUR, closes(column))
     const current = mine(column)
@@ -219,8 +212,6 @@ export function Calendar({
 
   /** Modo por cuartos: un toque marca el inicio y el siguiente cierra el turno. */
   const tapSlot = (column: string, slot: number) => {
-    if (locked(column)) return
-
     if (pending?.column === column) {
       setPending(null)
       setHover(null)
@@ -318,7 +309,6 @@ export function Calendar({
               closes={closes(column)}
               pending={pending?.column === column ? pending.slot : null}
               hover={pending?.column === column ? hover : null}
-              locked={locked(column)}
               names={names}
               onHour={(hourIndex) => tapHour(column, hourIndex)}
               onSlot={(slot) => tapSlot(column, slot)}
@@ -371,7 +361,6 @@ function Column({
   closes,
   pending,
   hover,
-  locked,
   names,
   onHour,
   onSlot,
@@ -385,7 +374,6 @@ function Column({
   closes: number
   pending: number | null
   hover: number | null
-  locked: boolean
   names: Map<number, string>
   onHour: (hourIndex: number) => void
   onSlot: (slot: number) => void
@@ -453,41 +441,39 @@ function Column({
           />
         )}
 
-        {!locked && (
-          <div className="absolute inset-0">
-            {precise
-              ? Array.from({ length: closes }, (_, slot) => (
+        <div className="absolute inset-0">
+          {precise
+            ? Array.from({ length: closes }, (_, slot) => (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => onSlot(slot)}
+                  onMouseEnter={() => onHoverSlot(slot)}
+                  onFocus={() => onHoverSlot(slot)}
+                  aria-label={`${when} ${atOfSlot(slot)}${
+                    pending === null ? ': empezar acá' : `: terminar acá`
+                  }`}
+                  className="absolute inset-x-0 block w-full cursor-pointer"
+                  style={{ top: `calc(var(--slot) * ${slot})`, height: 'var(--slot)' }}
+                />
+              ))
+            : HOURS.map((hour, h) =>
+                h * SLOTS_PER_HOUR >= closes ? null : (
                   <button
-                    key={slot}
+                    key={hour}
                     type="button"
-                    onClick={() => onSlot(slot)}
-                    onMouseEnter={() => onHoverSlot(slot)}
-                    onFocus={() => onHoverSlot(slot)}
-                    aria-label={`${when} ${atOfSlot(slot)}${
-                      pending === null ? ': empezar acá' : `: terminar acá`
-                    }`}
+                    onClick={() => onHour(h)}
+                    aria-label={hourLabel(blocks, when, hour, names, closes)}
+                    title={hourLabel(blocks, when, hour, names, closes)}
                     className="absolute inset-x-0 block w-full cursor-pointer"
-                    style={{ top: `calc(var(--slot) * ${slot})`, height: 'var(--slot)' }}
+                    style={{
+                      top: `calc(var(--hour) * ${h})`,
+                      height: `calc(var(--slot) * ${Math.min(SLOTS_PER_HOUR, closes - h * SLOTS_PER_HOUR)})`,
+                    }}
                   />
-                ))
-              : HOURS.map((hour, h) =>
-                  h * SLOTS_PER_HOUR >= closes ? null : (
-                    <button
-                      key={hour}
-                      type="button"
-                      onClick={() => onHour(h)}
-                      aria-label={hourLabel(blocks, when, hour, names, closes)}
-                      title={hourLabel(blocks, when, hour, names, closes)}
-                      className="absolute inset-x-0 block w-full cursor-pointer"
-                      style={{
-                        top: `calc(var(--hour) * ${h})`,
-                        height: `calc(var(--slot) * ${Math.min(SLOTS_PER_HOUR, closes - h * SLOTS_PER_HOUR)})`,
-                      }}
-                    />
-                  ),
-                )}
-          </div>
-        )}
+                ),
+              )}
+        </div>
       </div>
     </div>
   )
@@ -522,16 +508,6 @@ function Turno({ block }: { block: Block }) {
         className="font-head text-paper relative flex h-full flex-col items-center justify-center overflow-hidden border-2 border-[color:var(--tint)] bg-[color:var(--tint)] text-center leading-none font-black tracking-tight"
         style={{ containerType: 'size' }}
       >
-        {/* Lo ya entrenado sale rayado, como una planilla tachada. */}
-        {block.done && (
-          <span
-            className="pointer-events-none absolute inset-0 opacity-45"
-            style={{
-              backgroundImage:
-                'repeating-linear-gradient(-45deg, var(--color-paper) 0 3px, transparent 3px 8px)',
-            }}
-          />
-        )}
         <span
           className="relative flex w-full items-center justify-center gap-0.5 overflow-hidden"
           style={{ fontSize: 'clamp(0.5rem, min(34cqw, 52cqh), 1.5rem)' }}

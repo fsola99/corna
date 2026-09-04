@@ -15,7 +15,7 @@ export default async function RegisterPage({
       <h1 className="font-display overprint overprint-register text-6xl sm:text-7xl">CORNA</h1>
       <AuthForm mode="register" invite={i} />
       <p className="max-w-xs text-center text-sm">
-        Tu cuenta es tuya y el nombre lo podés cambiar cuando quieras sin perder el historial.
+        Tu cuenta es tuya y el nombre lo podés cambiar cuando quieras sin perder nada.
       </p>
     </main>
   )

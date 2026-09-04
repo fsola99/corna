@@ -33,7 +33,8 @@ export default async function RoutinesPage() {
           Tus rutinas
         </h1>
         <p className="mt-2 mb-8 text-sm opacity-70">
-          La marcada por defecto es la que aparece elegida cuando arrancás una sesión.
+          Armá las tuyas con series, repeticiones y peso objetivo. La marcada por defecto es la
+          que abre primero.
         </p>
 
         {list.length === 0 ? (

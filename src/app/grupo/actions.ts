@@ -117,7 +117,7 @@ export async function revokeInvite(groupId: number) {
   revalidatePath('/grupo')
 }
 
-/** Saca a alguien del grupo. Sus rutinas y su historial quedan intactos. */
+/** Saca a alguien del grupo. Sus rutinas quedan intactas. */
 export async function removeMember(groupId: number, userId: number) {
   const user = await requireUser()
   const group = await ownGroup(groupId, user.id)
@@ -152,7 +152,7 @@ export async function leaveGroup(groupId: number) {
   redirect('/')
 }
 
-/** Borra el grupo y sus membresías. No toca rutinas ni sesiones de nadie. */
+/** Borra el grupo y sus membresías. No toca las rutinas de nadie. */
 export async function deleteGroup(groupId: number) {
   const user = await requireUser()
   await ownGroup(groupId, user.id)
