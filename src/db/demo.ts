@@ -7,6 +7,7 @@ import {
   routines,
   sessionExercises,
   setLogs,
+  weeklyPlans,
   workoutSessions,
 } from './schema'
 import { weekOf } from '../lib/week'
@@ -28,6 +29,7 @@ async function main() {
   await db.delete(routines).where(inArray(routines.userId, ids))
   await db.delete(workoutSessions).where(inArray(workoutSessions.userId, ids))
   await db.delete(attendance).where(inArray(attendance.userId, ids))
+  await db.delete(weeklyPlans).where(inArray(weeklyPlans.userId, ids))
 
   const catalog = await db.select().from(exercises)
   const pick = (needle: string) => catalog.find((e) => e.name.toLowerCase().includes(needle))
@@ -57,18 +59,24 @@ async function main() {
     })),
   )
 
-  // El miércoles los dos caen a la misma hora: eso es lo que hace la grilla.
+  // Semana tipo: lunes y miércoles fijos, que es lo que después se corre o se cancela.
+  await db.insert(weeklyPlans).values([
+    { userId: me.id, weekday: 0, startAt: '19:30', endAt: '21:00' },
+    { userId: me.id, weekday: 2, startAt: '19:30', endAt: '21:00' },
+    ...(other.id === me.id
+      ? []
+      : [{ userId: other.id, weekday: 2, startAt: '20:00', endAt: '22:00' }]),
+  ])
+
+  // Turnos sueltos de esta semana, además de la semana tipo.
   await db.insert(attendance).values([
-    { userId: me.id, day: days[0], going: true, at: '19:30' },
-    { userId: me.id, day: days[2], going: true, at: '19:30' },
-    { userId: me.id, day: days[4], going: true, at: '18:00' },
-    { userId: me.id, day: days[5], going: true, at: null },
+    { userId: me.id, day: days[4], going: true, startAt: '18:15', endAt: '19:45' },
+    { userId: me.id, day: days[5], going: true, startAt: null, endAt: null },
     ...(other.id === me.id
       ? []
       : [
-          { userId: other.id, day: days[1], going: true, at: '07:00' },
-          { userId: other.id, day: days[2], going: true, at: '19:30' },
-          { userId: other.id, day: days[3], going: true, at: '21:00' },
+          { userId: other.id, day: days[1], going: true, startAt: '07:00', endAt: '08:30' },
+          { userId: other.id, day: days[3], going: true, startAt: '20:45', endAt: '22:00' },
         ]),
   ])
 

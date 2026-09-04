@@ -8,25 +8,58 @@ export const LONG_DAY_LABELS = ['lunes', 'martes', 'miércoles', 'jueves', 'vier
 /** Las franjas del calendario, de 07:00 a 22:00. */
 export const HOURS = Array.from({ length: 16 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`)
 
+/**
+ * La grilla se mide en cuartos de hora: al costado siguen apareciendo sólo las
+ * horas, pero un turno puede empezar y terminar en cualquier cuarto. Los
+ * cuartos se numeran desde las 07:00 —el 0— hasta las 23:00, que es el `TOTAL`
+ * y sólo vale como final.
+ */
+export const FIRST_HOUR = 7
+export const SLOT_MINUTES = 15
+export const SLOTS_PER_HOUR = 60 / SLOT_MINUTES
+export const TOTAL_SLOTS = HOURS.length * SLOTS_PER_HOUR
+
+/** En qué cuarto de la grilla cae 'HH:MM'. Puede dar afuera de la grilla. */
+export function slotOf(at: string): number {
+  const hours = Number(at.slice(0, 2))
+  const minutes = Number(at.slice(3, 5))
+  return (hours - FIRST_HOUR) * SLOTS_PER_HOUR + Math.floor(minutes / SLOT_MINUTES)
+}
+
+/** La hora 'HH:MM' en la que empieza un cuarto de la grilla. */
+export function atOfSlot(slot: number): string {
+  const minutes = FIRST_HOUR * 60 + slot * SLOT_MINUTES
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+}
+
+/**
+ * El cuarto en el que cierra el gimnasio ese día de la semana: el sábado a las
+ * 18:00 y el resto a las 23:00. Es el final de la grilla de ese día, así que
+ * vale como hora de salida pero no como hora de entrada.
+ */
+export function closingSlot(weekday: number): number {
+  return weekday === 5 ? slotOf('18:00') : TOTAL_SLOTS
+}
+
 /** Fecha local de Buenos Aires como 'YYYY-MM-DD', el formato de las columnas `date`. */
 export function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date())
 }
 
-/** La hora local de Buenos Aires de un instante, redondeada hacia abajo, como 'HH:00'. */
-export function localHour(when: Date): string {
-  return `${new Intl.DateTimeFormat('en-GB', {
+/** La hora local de Buenos Aires de un instante, como 'HH:MM'. */
+export function localTime(when: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
     timeZone: TZ,
     hour: '2-digit',
+    minute: '2-digit',
     hourCycle: 'h23',
-  }).format(when)}:00`
+  }).format(when)
 }
 
-/** La franja del calendario en la que cae una hora 'HH:MM', o nula si queda afuera. */
-export function hourSlot(at: string | null): string | null {
-  if (!at) return null
-  const slot = `${at.slice(0, 2)}:00`
-  return HOURS.includes(slot) ? slot : null
+/** El día de la semana de un 'YYYY-MM-DD': 0 es lunes y 5 sábado; el domingo da -1. */
+export function weekdayOf(day: string): number {
+  const index = (new Date(`${day}T12:00:00Z`).getUTCDay() + 6) % 7
+  return index < 6 ? index : -1
 }
 
 /** Los seis días —lunes a sábado— de la semana que contiene `day`. */

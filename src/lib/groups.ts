@@ -4,9 +4,12 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { groups, invites, memberships, users, type Group } from '@/db/schema'
+import { MAX_MEMBERS } from '@/lib/people'
 
 const GROUP_COOKIE = 'corna_group'
 const INVITE_DAYS = 7
+
+export { MAX_MEMBERS }
 
 export async function myGroups(userId: number): Promise<Group[]> {
   return db
@@ -57,6 +60,38 @@ export async function groupMembers(groupId: number) {
     .innerJoin(users, eq(users.id, memberships.userId))
     .where(eq(memberships.groupId, groupId))
     .orderBy(asc(memberships.joinedAt), asc(users.id))
+}
+
+/** Cuánta gente hay adentro. Nunca pasa de `MAX_MEMBERS`. */
+export async function memberCount(groupId: number): Promise<number> {
+  const rows = await db
+    .select({ userId: memberships.userId })
+    .from(memberships)
+    .where(eq(memberships.groupId, groupId))
+  return rows.length
+}
+
+/**
+ * Mete a alguien al grupo y devuelve si entró. Devuelve falso sólo cuando el
+ * grupo está completo; volver a entrar a uno en el que ya está no es un error.
+ *
+ * El cupo se vuelve a contar después de insertar porque la base se consulta por
+ * HTTP, sin transacciones: si dos entran a la vez y el grupo se pasa de diez,
+ * el que quedó afuera del cupo se da de baja solo.
+ */
+export async function joinGroup(groupId: number, userId: number): Promise<boolean> {
+  if (await isMember(groupId, userId)) return true
+
+  await db.insert(memberships).values({ groupId, userId }).onConflictDoNothing()
+
+  const members = await groupMembers(groupId)
+  const place = members.findIndex((member) => member.id === userId) + 1
+  if (place > 0 && place <= MAX_MEMBERS) return true
+
+  await db
+    .delete(memberships)
+    .where(and(eq(memberships.groupId, groupId), eq(memberships.userId, userId)))
+  return false
 }
 
 export async function isMember(groupId: number, userId: number): Promise<boolean> {

@@ -1,17 +1,34 @@
 /**
  * Una tinta por persona, repartida en el orden en que entraron al grupo: es lo
- * que permite leer el calendario sin leer los nombres. Las clases van escritas
- * enteras porque Tailwind las busca en el código, no las arma en tiempo de uso.
+ * que permite leer el calendario sin leer los nombres.
+ *
+ * Están elegidas contra la paleta de la web —cobre, verdín, musgo, bronce y la
+ * tinta clara— y contra sí mismas: ninguna queda a menos de 0.16 en OKLab de
+ * otra tinta ni de un color de la interfaz, y todas superan 3.5:1 de contraste
+ * sobre el papel oscuro. Por eso son frías y saturadas: los cálidos apagados
+ * —naranja, oro, oliva— son justamente los de la web, y ahí se mezclarían.
+ *
+ * El orden no es decorativo: las primeras son las más separadas entre sí, así
+ * un grupo de tres o cuatro arranca con las tintas más distintas del juego.
  */
 const TINTS = [
-  { solid: 'bg-rust border-rust', ghost: 'text-rust border-rust' },
-  { solid: 'bg-teal border-teal', ghost: 'text-teal border-teal' },
-  { solid: 'bg-moss border-moss', ghost: 'text-moss border-moss' },
-  { solid: 'bg-brass border-brass', ghost: 'text-brass border-brass' },
-  { solid: 'bg-ink border-ink', ghost: 'text-ink border-ink' },
+  '#d5e30d', // lima
+  '#9235fe', // violeta
+  '#fd7db1', // rosa
+  '#34d1f9', // celeste
+  '#fc17fd', // magenta
+  '#d61678', // frambuesa
+  '#7d649c', // malva
+  '#0065f1', // azul
+  '#11faba', // verde agua
+  '#8295fb', // lila
 ] as const
 
+/** Un color CSS: va a `--tint`, no a una clase de Tailwind. */
 export type Tint = (typeof TINTS)[number]
+
+/** Cuánta gente entra en un grupo: hay exactamente una tinta para cada uno. */
+export const MAX_MEMBERS = TINTS.length
 
 export function tintOf(index: number): Tint {
   return TINTS[index % TINTS.length]

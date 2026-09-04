@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { groups, invites, memberships } from '@/db/schema'
-import { createInvite, isMember, setActiveGroup } from '@/lib/groups'
+import { createInvite, isMember, joinGroup, MAX_MEMBERS, setActiveGroup } from '@/lib/groups'
 import { requireUser } from '@/lib/session'
 
 export type GroupState = { error?: string }
@@ -53,10 +53,9 @@ export async function joinWithCode(_prev: GroupState, formData: FormData): Promi
   const invite = await usableInvite(code)
   if (!invite) return { error: 'Esa invitación no existe, ya venció o fue dada de baja.' }
 
-  await db
-    .insert(memberships)
-    .values({ groupId: invite.groupId, userId: user.id })
-    .onConflictDoNothing()
+  if (!(await joinGroup(invite.groupId, user.id)))
+    return { error: `Ese grupo ya está completo: entran ${MAX_MEMBERS} como máximo.` }
+
   await setActiveGroup(invite.groupId)
   redirect('/')
 }
@@ -67,10 +66,9 @@ export async function acceptInvite(code: string) {
   const invite = await usableInvite(code)
   if (!invite) redirect(`/invitacion/${encodeURIComponent(code)}?e=1`)
 
-  await db
-    .insert(memberships)
-    .values({ groupId: invite.groupId, userId: user.id })
-    .onConflictDoNothing()
+  if (!(await joinGroup(invite.groupId, user.id)))
+    redirect(`/invitacion/${encodeURIComponent(code)}?e=lleno`)
+
   await setActiveGroup(invite.groupId)
   redirect('/')
 }
